@@ -7,6 +7,8 @@ class CustomButton extends StatelessWidget {
   final VoidCallback onPressed; // Callback for button press
   final Color backgroundColor; // Background color of the button
   final Color textColor; // Text color
+  final double? textSize;
+
 
   const CustomButton({
     super.key,
@@ -14,6 +16,7 @@ class CustomButton extends StatelessWidget {
     required this.onPressed,
     required this.backgroundColor,
     this.textColor = CustomColors.black,
+    this.textSize,
   });
 
   @override
@@ -38,7 +41,7 @@ class CustomButton extends StatelessWidget {
               text,
               style: TextStyle(
                 fontFamily: 'Poppins', // Use Poppins font
-                fontSize: 16, // Adjust font size
+                fontSize: textSize ?? 16, // Adjust font size
                 fontWeight: FontWeight.w600, // Font weight
                 color: textColor, // Text color
                 letterSpacing: -0.7,

@@ -6,6 +6,7 @@ import 'colors.dart';
 import 'layout.dart';
 import 'widgets/button.dart';
 
+// Checks if user account exists to load relevant data
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -14,14 +15,19 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  // Create TextEditingControllers to capture user input
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+
+  // Hide password toggle
   bool _obscureText = true;
+  // Tracks if the password entered doesn't match the stored password
   bool _passwordFieldError = false;
-  String? _passwordErrorMessage; // Store the error message dynamically
+  String? _passwordErrorMessage;
 
   @override
   void dispose() {
+    // Ensure memory is cleaned up when the widget is disposed
     emailController.dispose();
     passwordController.dispose();
     super.dispose();
@@ -34,6 +40,7 @@ class _LoginPageState extends State<LoginPage> {
     final firestore = FirebaseFirestore.instance;
 
     try {
+      // Check if the user's email exists in the database
       final userSnapshot = await firestore
           .collection('users')
           .where('email', isEqualTo: email)
@@ -41,29 +48,31 @@ class _LoginPageState extends State<LoginPage> {
           .get();
 
       if (userSnapshot.docs.isNotEmpty) {
+        // Extract user details from the database
         final userData = userSnapshot.docs.first.data();
         String storedPassword = userData['password'];
 
         if (storedPassword == password) {
-          // Password is correct, navigate to MainPage
+          // If password matches, navigate to the main page
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => MainPage()),
           );
         } else {
-          // Password is incorrect, show error
+          // If the password is incorrect, show an error on the password field
           setState(() {
             _passwordFieldError = true;
-            _passwordErrorMessage = 'Incorrect password'; // Set error message
+            _passwordErrorMessage = 'Incorrect password'; // Display error message
           });
         }
       } else {
-        // No user found with the given email
+        // If no account matches the email, show a notification
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('No account found with this email.')),
         );
       }
     } catch (e) {
+      // Show an error notification in case of a database or network issue
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: $e')),
       );
@@ -73,13 +82,15 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      resizeToAvoidBottomInset: false,
+      resizeToAvoidBottomInset: false, // Prevents layout changes when keyboard appears
       body: GestureDetector(
         onTap: () {
+          // Hide the keyboard when tapping outside input fields
           FocusScope.of(context).unfocus();
         },
         child: Stack(
           children: [
+            // Background image for the login screen
             Positioned.fill(
               child: Image.asset(
                 'assets/images/background.png',
@@ -92,7 +103,7 @@ class _LoginPageState extends State<LoginPage> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(45.0),
                   ),
-                  elevation: 0,
+                  elevation: 0, // Flat appearance for the card
                   color: Colors.white,
                   child: Container(
                     width: MediaQuery.of(context).size.width - 50,
@@ -108,6 +119,7 @@ class _LoginPageState extends State<LoginPage> {
                             size: 30,
                           ),
                           onPressed: () async {
+                            // Delay navigation to give feedback on the button press
                             FocusScope.of(context).unfocus();
                             await Future.delayed(
                                 const Duration(milliseconds: 150));
@@ -146,6 +158,7 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ),
                         SizedBox(height: 75),
+                        // Email input field
                         TextField(
                           controller: emailController,
                           decoration: InputDecoration(
@@ -167,12 +180,14 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ),
                         SizedBox(height: 20),
+                        // Password input field
                         TextField(
                           controller: passwordController,
-                          obscureText: _obscureText,
+                          obscureText: _obscureText, // Toggles visibility of the password
                           decoration: InputDecoration(
                             labelText: 'Enter password',
                             suffixIcon: IconButton(
+                              // Toggles password visibility
                               icon: Icon(
                                 _obscureText
                                     ? Icons.visibility_off
@@ -195,7 +210,7 @@ class _LoginPageState extends State<LoginPage> {
                               borderRadius: BorderRadius.circular(8.0),
                               borderSide: BorderSide(
                                 color: _passwordFieldError
-                                    ? Colors.red
+                                    ? Colors.red // Show red border if password is incorrect
                                     : CustomColors.primary,
                                 width: 2.0,
                               ),
@@ -204,19 +219,20 @@ class _LoginPageState extends State<LoginPage> {
                               borderRadius: BorderRadius.circular(8.0),
                               borderSide: BorderSide(
                                 color: _passwordFieldError
-                                    ? Colors.red
+                                    ? Colors.red // Show red border if password is incorrect
                                     : Colors.grey,
                                 width: 1.5,
                               ),
                             ),
                             errorText:
-                            _passwordFieldError ? _passwordErrorMessage : null,
+                            _passwordFieldError ? _passwordErrorMessage : null, // Displays message if password is incorrect
                             errorStyle: TextStyle(
                               color: Colors.red,
                               fontSize: 14,
                             ),
                           ),
                           onChanged: (value) {
+                            // Clear error state when the user starts typing again
                             setState(() {
                               _passwordFieldError = false;
                               _passwordErrorMessage = null; // Reset error message
@@ -229,7 +245,9 @@ class _LoginPageState extends State<LoginPage> {
                             onPressed: () {
                               Navigator.push(
                                 context,
-                                MaterialPageRoute(builder: (context) => ForgotPasswordPage(email: emailController.text)),
+                                MaterialPageRoute(
+                                  builder: (context) => ForgotPasswordPage(email: emailController.text),
+                                ),
                               );
                             },
                             child: CustomText(
@@ -241,10 +259,11 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                           ),
                         ),
+                        // Adjust button position based on error visibility
                         _passwordFieldError ? SizedBox(height: 120) : SizedBox(height: 145),
                         CustomButton(
                           text: 'Log In',
-                          onPressed: handleLogin,
+                          onPressed: handleLogin, // Validates login information
                           backgroundColor: CustomColors.primary,
                         ),
                       ],

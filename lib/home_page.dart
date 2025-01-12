@@ -56,20 +56,23 @@ class _HomePageState extends State<HomePage>
     _timer = Timer.periodic(const Duration(seconds: 5), (timer) async {
       // Check for updated health data every 5 seconds
       _initializeData();
-      _fetchRecentBadges(); // Fetch recent badges
+      _fetchRecentBadges();
     });
   }
 
   Future<void> _fetchRecentBadges() async {
     try {
-      final String userId = "B7FOLVzsJ0trs9DLvYcZ"; // Replace with the actual user ID
+      final String userId = "B7FOLVzsJ0trs9DLvYcZ";
       final snapshot = await FirebaseFirestore.instance
           .collection('users')
           .doc(userId)
           .collection('badges')
           .get();
 
+      // Separately save
       List<BadgeItem> completed = [];
+
+      // Check database for all badge details
       for (var doc in snapshot.docs) {
         final data = doc.data();
         final progress = data['progress'] ?? 0;
@@ -78,6 +81,7 @@ class _HomePageState extends State<HomePage>
         final name = data['name'] ?? 'Unnamed Badge';
         final message = data['message'] ?? '';
 
+        // Turn data into a interactable widget
         final badge = BadgeItem(
           imagePath: 'assets/images/$image',
           name: name,
@@ -85,12 +89,15 @@ class _HomePageState extends State<HomePage>
           isUnlocked: progress >= amount,
           progress: progress,
           amount: amount,
+          isNew: data.containsKey('recent'),
         );
 
+        // Check if badge unlock criteria has been met
         if (progress >= amount) {
           completed.add(badge);
         }
       }
+      // Check if new badge has been unlocked since last page's refresh
       if (completed.length != recentBadges.length) {
         setState(() {
           recentBadges = completed;
@@ -101,8 +108,9 @@ class _HomePageState extends State<HomePage>
     }
   }
 
+  // Returns previous day's calories to compare with today's
   Future<int> fetchPreviousCalories() async {
-    final userId = "B7FOLVzsJ0trs9DLvYcZ"; // Replace with the actual user ID
+    final userId = "B7FOLVzsJ0trs9DLvYcZ";
     final firestore = FirebaseFirestore.instance;
 
     try {
@@ -111,13 +119,12 @@ class _HomePageState extends State<HomePage>
           await firestore.collection('users').doc(userId).get();
 
       if (userDoc.exists) {
-        // Access prevSummary -> calories
+        // Access calories burned yesterday
         final data = userDoc.data() as Map<String, dynamic>;
         final prevSummary = data['prevSummary'] as Map<String, dynamic>;
         final previousCalories = prevSummary['calories'];
 
         return previousCalories;
-        // Use the `previousCalories` variable as needed
       } else {
         print("User document does not exist.");
       }

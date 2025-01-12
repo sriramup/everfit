@@ -4,7 +4,7 @@ import 'package:everfit/layout.dart';
 import 'package:everfit/signup.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // For SystemChrome
+import 'package:flutter/services.dart';
 import 'package:health/health.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -15,76 +15,70 @@ import 'widgets/button.dart';
 import 'package:intl/intl.dart';
 
 
-
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   globals.currentDate = DateFormat('MMMM d, yyyy').format(DateTime.now());
-  final prefs = await SharedPreferences.getInstance();
-  // if (prefs.getString('last_login_date') != null && globals.currentDate != prefs.getString('last_login_date')) {
-  //   globals.newDay = true;
-  // } else {
-  //   globals.newDay = false;
-  // }
-  globals.newDay = false; // delete later
-  prefs.setBool('is_health_authorized', false);
 
+  // Check if day passed since last login to refresh page content
+  final prefs = await SharedPreferences.getInstance();
+  if (prefs.getString('last_login_date') != null && globals.currentDate != prefs.getString('last_login_date')) {
+    globals.newDay = true;
+  } else {
+    globals.newDay = false;
+  }
+
+  // Establish connection with backend service
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
+  // Allow read access to Apple Health data
   Health().configure();
 
+  // Lock screen in portrait mode (upright)
   SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp, // Portrait mode (upright)
+    DeviceOrientation.portraitUp,
   ]).then((_) {
     runApp(
         AppLifecycleHandler(
-          child: const MyApp(),
+          child: MyApp(prefs: prefs),
         )
     );
   });
 }
 
+// Prompts app to open and load first screen
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final SharedPreferences prefs;
+  const MyApp({super.key, required this.prefs});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
+    // Check if skipLogin option enabled in app settings
+    bool? skipLogin = prefs.getBool('skipLogin');
     return MaterialApp(
       title: 'Everfit',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
         splashColor: Colors.transparent,
         highlightColor: Colors.transparent,
         hoverColor: Colors.transparent,
         colorScheme: ColorScheme.fromSeed(seedColor: CustomColors.primary),
         useMaterial3: true,
       ),
-      // home: StartupPage(),
-      home: MainPage(),
+      // Skip to main page if skipLogin enabled
+      home: skipLogin != null && skipLogin ? MainPage() : StartupPage(),
     );
   }
 }
 
+// Welcome page for users to get started
 class StartupPage extends StatelessWidget {
+  const StartupPage({super.key});
+
   @override
   Widget build(BuildContext context) {
+    // Define screen size
     final size = MediaQuery.of(context).size;
 
     return Scaffold(
@@ -93,7 +87,7 @@ class StartupPage extends StatelessWidget {
           // Background Image
           Positioned.fill(
             child: Image.asset(
-              'assets/images/background.png', // Replace with your image path
+              'assets/images/background.png',
               fit: BoxFit.cover,
             ),
           ),
@@ -122,7 +116,7 @@ class StartupPage extends StatelessWidget {
                             Container(
                               padding: EdgeInsets.all(30.0),
                               child: Transform(
-                                transform: Matrix4.diagonal3Values(1.0, 0.95, 1.0), // Squash vertically
+                                transform: Matrix4.diagonal3Values(1.0, 0.95, 1.0), // Squash text vertically
                                 alignment: Alignment.topCenter,
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -130,7 +124,7 @@ class StartupPage extends StatelessWidget {
                                     Text(
                                       'Welcome to',
                                       style: TextStyle(
-                                        fontFamily: 'Poppins', // Use your custom font here
+                                        fontFamily: 'Poppins',
                                         fontSize: 27,
                                         fontWeight: FontWeight.w400,
                                         letterSpacing: -0.7,
@@ -140,7 +134,7 @@ class StartupPage extends StatelessWidget {
                                     Text(
                                       'EverFit',
                                       style: TextStyle(
-                                        fontFamily: 'Poppins', // Use your custom font here
+                                        fontFamily: 'Poppins',
                                         fontSize: 27,
                                         fontWeight: FontWeight.w700,
                                         letterSpacing: -0.7,
@@ -151,15 +145,15 @@ class StartupPage extends StatelessWidget {
                                 ),
                               ),
                             ),
-                            // Adjusted logo image with custom padding
                             Padding(
                               padding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
                               child: FractionallySizedBox(
-                                widthFactor: 0.7, // Set width to 80% of the card
+                                // Set width to 70% of the card
+                                widthFactor: 0.7,
                                 child: Align(
                                   alignment: Alignment.center,
                                   child: Image.asset(
-                                    'assets/images/logo.png', // Replace with your image path
+                                    'assets/images/logo.png',
                                     fit: BoxFit.contain,
                                   ),
                                 ),
@@ -170,7 +164,7 @@ class StartupPage extends StatelessWidget {
                               child: Text(
                                 'WHERE WELLNESS TAKES ROOT',
                                 style: TextStyle(
-                                  fontFamily: 'Poppins', // Use your custom font here
+                                  fontFamily: 'Poppins',
                                   fontSize: 35,
                                   fontWeight: FontWeight.w700,
                                   letterSpacing: -0.7,
@@ -181,10 +175,10 @@ class StartupPage extends StatelessWidget {
                             SizedBox(
                                 height: 60
                             ),
-                            // Custom Buttons
                             CustomButton(
                               text: 'Log In',
                               onPressed: () {
+                                // Opens the log in page
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(builder: (context) => LoginPage()),
@@ -200,6 +194,7 @@ class StartupPage extends StatelessWidget {
                               backgroundColor: CustomColors.offWhite,
                               textColor: Colors.black,
                               onPressed: () {
+                                // Opens the sign up page
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(builder: (context) => SignupPage()),
@@ -221,6 +216,7 @@ class StartupPage extends StatelessWidget {
   }
 }
 
+// Checks if app is terminating and saves relevant data to cache
 class AppLifecycleHandler extends StatefulWidget {
   final Widget child;
 
@@ -244,17 +240,17 @@ class _AppLifecycleHandlerState extends State<AppLifecycleHandler>
     super.dispose();
   }
 
-  // Save the previous login date before the app terminates
+  // Save previous login date before app terminates
   Future<void> saveLoginDateBeforeTermination() async {
     final prefs = await SharedPreferences.getInstance();
-    // Set the current login date as the previous login date
+    // Set current login date as previous login date
     await prefs.setString('last_login_date', globals.currentDate);
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.detached || state == AppLifecycleState.paused) {
-      // Save the login date when the app is closing or going to the background
+      // Save login date when app is closing or going to background
       saveLoginDateBeforeTermination();
     }
   }

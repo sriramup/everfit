@@ -144,7 +144,7 @@ class _SagePageState extends State<SagePage> {
                           children: [
                             if (!isUser)
                               CircleAvatar(
-                                backgroundColor: CustomColors.turqoise,
+                                backgroundColor: CustomColors.turquoise,
                                 child: Padding(
                                   padding: const EdgeInsets.all(3.0),
                                   child:

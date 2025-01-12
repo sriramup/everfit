@@ -1,15 +1,18 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:everfit/home_page.dart';
 import 'package:flutter/material.dart';
 import 'colors.dart';
-import 'widgets/button.dart'; // Import your CustomButton class
+import 'widgets/button.dart';
 
+// Allows users to create credentials that store user-specific data
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
 
   @override
-  State<SignupPage> createState() => _LoginPageState();
+  State<SignupPage> createState() => _SignupPageState();
 }
 
-class _LoginPageState extends State<SignupPage> {
+class _SignupPageState extends State<SignupPage> {
   // Create TextEditingControllers to capture user input
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
@@ -19,27 +22,37 @@ class _LoginPageState extends State<SignupPage> {
 
   @override
   void dispose() {
-    // Dispose of the controllers when the widget is removed
+    // Dispose of the controllers when the page changes
     emailController.dispose();
     passwordController.dispose();
     super.dispose();
   }
 
-  void handleSignup() {
-    // Retrieve email and password
+  void handleSignup() async {
+    // Store user inputted email and password
     String email = emailController.text;
     String password = passwordController.text;
 
-    // Debugging: Print the values (replace this with your login logic)
-    print('Email: $email');
-    print('Password: $password');
+    // Structure data to adhere to database schema
+    final credentials = {
+      'email': email,
+      'password': password,
+    };
 
-    // Add your authentication logic here
+    // Add new user to database
+    final firestore = FirebaseFirestore.instance;
+    await firestore
+        .collection('users')
+        .add(credentials);
+
+    // Go to home page
+    Navigator.push(context, MaterialPageRoute(builder: (context) => HomePage()));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // Avoid screen resize when keyboard opened
       resizeToAvoidBottomInset: false,
       body: GestureDetector(
         // Dismiss keyboard when tapping outside of a text field
@@ -48,21 +61,21 @@ class _LoginPageState extends State<SignupPage> {
         },
         child: Stack(
           children: [
-            // Background Image
+            // Background image
             Positioned.fill(
               child: Image.asset(
-                'assets/images/background.png', // Replace with your image path
+                'assets/images/background.png',
                 fit: BoxFit.cover,
               ),
             ),
-            // Foreground content
+            // Foreground widget layout
             Positioned.fill(
               child: Center(
                 child: Card(
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(45.0),
                   ),
-                  elevation: 0, // No shadow
+                  elevation: 0, // No  button shadow
                   color: Colors.white,
                   child: Container(
                     width: MediaQuery.of(context).size.width - 50,
@@ -79,7 +92,7 @@ class _LoginPageState extends State<SignupPage> {
                             size: 30,
                           ),
                           onPressed: () async {
-                            // Hide keyboard and go back
+                            // Hide keyboard and go to previous page
                             FocusScope.of(context).unfocus();
                             await Future.delayed(const Duration(milliseconds: 150));
                             Navigator.pop(context);
@@ -87,7 +100,6 @@ class _LoginPageState extends State<SignupPage> {
                           padding: EdgeInsets.zero,
                         ),
                         SizedBox(height: 10),
-                        // EverFit and Squashed Log In
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -107,7 +119,7 @@ class _LoginPageState extends State<SignupPage> {
                             Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 2.0),
                               child: Transform(
-                                transform: Matrix4.diagonal3Values(1.0, 0.95, 1.0), // Squashed text
+                                transform: Matrix4.diagonal3Values(1.0, 0.95, 1.0),
                                 child: Text(
                                   'Sign Up',
                                   style: TextStyle(
@@ -123,9 +135,9 @@ class _LoginPageState extends State<SignupPage> {
                           ],
                         ),
                         SizedBox(height: 75),
-                        // Email TextField
+                        // Allows email field to be inputted by user
                         TextField(
-                          controller: emailController, // Connect the controller
+                          controller: emailController, // Allow user to modify
                           decoration: InputDecoration(
                             labelText: 'Enter email ID',
                             border: OutlineInputBorder(
@@ -134,20 +146,20 @@ class _LoginPageState extends State<SignupPage> {
                             contentPadding: EdgeInsets.symmetric(
                               vertical: 25.0,
                               horizontal: 20.0,
-                            ), // Adjust
+                            ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8.0),
                               borderSide: BorderSide(
-                                color: CustomColors.primary, // Custom color
+                                color: CustomColors.primary,
                                 width: 2.0,
                               ),
                             ),
                           ),
                         ),
                         SizedBox(height: 20),
-                        // Password TextField
+                        // Allows password field to be inputted by user
                         TextField(
-                          controller: passwordController, // Connect the controller
+                          controller: passwordController, // Allow user to modify
                           obscureText: _obscureText, // Control visibility
                           decoration: InputDecoration(
                             labelText: 'Create password',
@@ -169,21 +181,20 @@ class _LoginPageState extends State<SignupPage> {
                             contentPadding: EdgeInsets.symmetric(
                               vertical: 25.0,
                               horizontal: 20.0,
-                            ), // Adjust
+                            ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8.0),
                               borderSide: BorderSide(
-                                color: CustomColors.primary, // Custom color
+                                color: CustomColors.primary,
                                 width: 2.0,
                               ),
                             ),
                           ),
                         ),
                         SizedBox(height: 192),
-                        // Log In Button using CustomButton
                         CustomButton(
                           text: 'Sign Up',
-                          onPressed: handleSignup, // Call handleSignup on press
+                          onPressed: handleSignup, // Save credentials
                           backgroundColor: CustomColors.primary,
                         ),
                       ],

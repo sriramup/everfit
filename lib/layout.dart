@@ -5,7 +5,10 @@ import 'app_bar.dart';
 import 'discover_page.dart';
 import 'goals_page.dart';
 import 'home_page.dart';
+import 'settings_page.dart';
 
+
+// Uniform layout of the app that maps each page to navigation bar icons
 class MainPage extends StatefulWidget {
   const MainPage({super.key});
 
@@ -22,6 +25,7 @@ class _MainPageState extends State<MainPage> {
   @override
   void initState() {
     super.initState();
+    // Assign a page to an index
     _pages = [
       {
         'title': 'Home',
@@ -49,7 +53,7 @@ class _MainPageState extends State<MainPage> {
       },
       {
         'title': 'Settings',
-        'body': const Center(child: Text('Adjust your preferences here')),
+        'body': SettingsPage(),
         'subtitle': false,
         'add' : false,
 
@@ -57,6 +61,7 @@ class _MainPageState extends State<MainPage> {
     ];
   }
 
+  // Change what page is being viewed without sliding
   void _onTabTapped(int index) {
     setState(() {
       _currentIndex = index;
@@ -70,13 +75,14 @@ class _MainPageState extends State<MainPage> {
         title: _pages[_currentIndex]['title'],
         subtitle: _pages[_currentIndex]['subtitle'],
         add: _pages[_currentIndex]['add'],
-        body: IndexedStack(
+        body: IndexedStack( // Allows the state of each page to be preserved
           index: _currentIndex,
           children: <Widget>[
             HomePage(),
             GoalsPage(),
             BadgesPage(),
             DiscoverPage(),
+            SettingsPage(),
           ],
         ),
       ),

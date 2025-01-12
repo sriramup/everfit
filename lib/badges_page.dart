@@ -2,8 +2,6 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:everfit/widgets/badge_widgets.dart';
 import 'package:flutter/material.dart';
-import '../colors.dart'; // Your custom colors
-import '../widgets/text.dart'; // Your CustomText widget
 
 class BadgesPage extends StatefulWidget {
   const BadgesPage({super.key});
@@ -100,6 +98,7 @@ class _BadgesPageState extends State<BadgesPage> {
           isUnlocked: progress >= amount,
           progress: progress,
           amount: amount,
+          isNew: data.containsKey('recent'),
         );
 
         if (progress >= amount) {

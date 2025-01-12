@@ -1,8 +1,6 @@
-import 'package:everfit/widgets/activity_of_the_day.dart';
-import 'package:everfit/widgets/day_tips.dart';
-import 'package:everfit/widgets/sage.dart';
+import 'widgets/activity_of_the_day.dart';
 import 'package:flutter/material.dart';
-import 'package:everfit/colors.dart';
+import 'colors.dart';
 import 'widgets/weather_card.dart'; // Import your WeatherCard widget
 import 'widgets/day_tips.dart';
 import 'widgets/tap_card.dart';
@@ -60,7 +58,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
                       );
                     },
                     backgroundColor: Colors.white,
-                    containerColor: CustomColors.turqoise,
+                    containerColor: CustomColors.turquoise,
                   ),
                 ],
               ),

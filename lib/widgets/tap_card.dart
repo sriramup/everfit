@@ -12,6 +12,7 @@ class TapCard extends StatelessWidget {
   final Color? border; // Optional border color for the image
   final Color? imageColor; // Optional color for the image
   final Color? containerColor;
+  final String? category;
 
   const TapCard({
     super.key,
@@ -25,12 +26,13 @@ class TapCard extends StatelessWidget {
     this.border,
     this.imageColor, // Initialize the optional parameter
     this.containerColor,
+    this.category,
   });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: backgroundColor == CustomColors.offWhite || containerColor == CustomColors.turqoise ? const EdgeInsets.symmetric(horizontal: 0.0) : const EdgeInsets.symmetric(horizontal: 20.0),
+      padding: backgroundColor == CustomColors.offWhite || containerColor == CustomColors.turquoise ? const EdgeInsets.symmetric(horizontal: 0.0) : const EdgeInsets.symmetric(horizontal: 20.0),
       child: GestureDetector(
         onTap: onPressed, // Handle the tap
         child: Container(
@@ -38,7 +40,7 @@ class TapCard extends StatelessWidget {
             color: backgroundColor,
             borderRadius: BorderRadius.circular(15.0),
           ),
-          padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 10.0),
+          padding: containerColor!= null && containerColor == CustomColors.primaryFaded ? const EdgeInsets.symmetric(vertical: 15.0, horizontal: 10.0) : const EdgeInsets.symmetric(vertical: 12.0, horizontal: 10.0),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -46,40 +48,57 @@ class TapCard extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(right: 10.0, left: 5.0),
                 // Add padding around the image
-                child: Container(
-                  width: 50.0, // Larger image width
-                  height: 50.0, // Larger image height
-                  decoration: BoxDecoration(
-                    color: backgroundColor == CustomColors.offWhite ? CustomColors.primary : containerColor != null ? CustomColors.turqoise : null,
-                    borderRadius: BorderRadius.circular(8.0),
-                    border: border != null
-                        ? Border.all(
-                      color: border!,
-                      width: 2.0,
-                    )
-                        : null, // Add border only if provided
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8.0),
-                    child: Container(
-                      padding: backgroundColor == CustomColors.offWhite ? EdgeInsets.all(10.0) : containerColor == CustomColors.turqoise ? EdgeInsets.all(1.0) : null,
-                      child: Image.asset(
-                        imagePath,
-                        fit: BoxFit.cover,
-                        color: imageColor, // Apply the imageColor if provided
-                        colorBlendMode: imageColor != null
-                            ? BlendMode.srcIn
-                            : BlendMode.dst, // Ensure proper blending
-                        errorBuilder: (context, error, stackTrace) => Icon(
-                          Icons.image_not_supported,
-                          color: Colors.grey,
-                          size: 24.0,
-                        ), // Fallback icon if image fails to load
+                child:
+                containerColor != null && containerColor == CustomColors.primaryFaded ?
+                  CircleAvatar(
+                    radius: 20.0,
+                    backgroundColor: CustomColors.primaryFaded,
+                    child: Icon(
+                      category == 'active'
+                          ? Icons.local_fire_department
+                          : category == 'nutrition' ? Icons.no_food_rounded
+                          : category == 'weight' ? Icons.monitor_weight
+                          : category == 'drink' ? Icons.local_drink
+                          : category == 'custom' ? Icons.folder_special
+                          : Icons.mode_night,
+                      color: CustomColors.primary,
+                    ),
+                  )
+                :
+                  Container(
+                    width: 50.0, // Larger image width
+                    height: 50.0, // Larger image height
+                    decoration: BoxDecoration(
+                      color: backgroundColor == CustomColors.offWhite ? CustomColors.primary : containerColor,
+                      borderRadius: BorderRadius.circular(8.0),
+                      border: border != null
+                          ? Border.all(
+                        color: border!,
+                        width: 2.0,
+                      )
+                          : null, // Add border only if provided
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8.0),
+                      child: Container(
+                        padding: backgroundColor == CustomColors.offWhite ? EdgeInsets.all(10.0) : containerColor == CustomColors.turquoise ? EdgeInsets.all(1.0) : null,
+                        child: Image.asset(
+                          imagePath,
+                          fit: BoxFit.cover,
+                          color: imageColor, // Apply the imageColor if provided
+                          colorBlendMode: imageColor != null
+                              ? BlendMode.srcIn
+                              : BlendMode.dst, // Ensure proper blending
+                          errorBuilder: (context, error, stackTrace) => Icon(
+                            Icons.image_not_supported,
+                            color: Colors.grey,
+                            size: 24.0,
+                          ), // Fallback icon if image fails to load
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
               // Text Column
               Expanded(
                 child: Padding(

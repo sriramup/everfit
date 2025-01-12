@@ -1,12 +1,12 @@
 import 'dart:io';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:everfit/widgets/text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart'; // For sharing functionality
 import 'dart:ui' as ui;
-
 
 import '../colors.dart';
 
@@ -81,38 +81,82 @@ class BadgeCategoryWidget extends StatelessWidget {
 }
 
 // Badge Item Widget
-class BadgeItem extends StatelessWidget {
+class BadgeItem extends StatefulWidget {
   final String imagePath;
   final String name;
   final String message;
-  final bool isNew;
   final bool isUnlocked;
   final int progress;
   final int amount;
   final bool? forRecent;
+  final bool isNew;
 
   const BadgeItem({
     super.key,
     required this.imagePath,
     required this.name,
     required this.message,
-    this.isNew = false,
     required this.isUnlocked,
     required this.progress,
     required this.amount,
+    required this.isNew,
     this.forRecent,
   });
+
+  @override
+  _BadgeItemState createState() => _BadgeItemState();
+}
+
+class _BadgeItemState extends State<BadgeItem> {
+  late bool isUnlocked;
+  late bool isNew;
+
+  @override
+  void initState() {
+    super.initState();
+    isUnlocked = widget.isUnlocked; // Initialize with the passed value
+    isNew = widget.isNew; // Initialize with the passed value
+  }
+
+  Future<void> _removeRecentField() async {
+    try {
+      final String userId =
+          "B7FOLVzsJ0trs9DLvYcZ"; // Replace with actual user ID
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .collection('badges')
+          .where('name', isEqualTo: widget.name)
+          .get();
+
+      for (var doc in querySnapshot.docs) {
+        await doc.reference.update({
+          'recent': FieldValue.delete(),
+        });
+      }
+
+      // Update local state to remove "NEW" badge visually
+      setState(() {
+        isNew = false;
+      });
+    } catch (e) {
+      print("Error removing 'recent' field: $e");
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
+        if (isNew) {
+          _removeRecentField();
+        }
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => BadgeViewPage(
-              forRecent: forRecent != null,
-              badge: this,
+              forRecent: widget.forRecent != null,
+              badge: widget,
             ),
           ),
         );
@@ -126,37 +170,38 @@ class BadgeItem extends StatelessWidget {
           color: Colors.transparent,
           image: DecorationImage(
             colorFilter: ColorFilter.mode(
-              isUnlocked ? CustomColors.primary : CustomColors.lightGray, // Apply primary color
+              isUnlocked ? CustomColors.primary : CustomColors.lightGray,
+              // Apply primary color
               BlendMode.srcATop, // Blend mode to tint the image
             ),
-            image: AssetImage(imagePath),
+            image: AssetImage(widget.imagePath),
             fit: BoxFit.cover,
           ),
         ),
-        child: isNew
+        child: isNew && widget.name == 'First Weight Drop'
             ? Stack(
-          children: [
-            Positioned(
-              top: 2.0,
-              right: 2.0,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 5.0, vertical: 2.0),
-                decoration: BoxDecoration(
-                  color: CustomColors.red,
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-                child: const CustomText(
-                  text: "NEW",
-                  fontSize: 10.0,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                  squash: true,
-                ),
-              ),
-            ),
-          ],
-        )
+                children: [
+                  Positioned(
+                    top: 2.0,
+                    right: 2.0,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 5.0, vertical: 2.0),
+                      decoration: BoxDecoration(
+                        color: CustomColors.red,
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
+                      child: const CustomText(
+                        text: "NEW",
+                        fontSize: 10.0,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        squash: true,
+                      ),
+                    ),
+                  ),
+                ],
+              )
             : null,
       ),
     );
@@ -168,12 +213,16 @@ class BadgeViewPage extends StatelessWidget {
   final BadgeItem badge;
   final bool forRecent;
 
-  const BadgeViewPage({super.key, required this.badge, required this.forRecent});
+  const BadgeViewPage(
+      {super.key, required this.badge, required this.forRecent});
 
-  Future<void> _captureAndShareBadge(BuildContext context, GlobalKey key) async {
+  Future<void> _captureAndShareBadge(
+      BuildContext context, GlobalKey key) async {
     try {
-      final boundary = key.currentContext?.findRenderObject() as RenderRepaintBoundary?;
-      final image = await boundary?.toImage(pixelRatio: ui.window.devicePixelRatio);
+      final boundary =
+          key.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+      final image =
+          await boundary?.toImage(pixelRatio: ui.PlatformDispatcher.instance.views.first.devicePixelRatio);
       final byteData = await image?.toByteData(format: ui.ImageByteFormat.png);
       final pngBytes = byteData?.buffer.asUint8List();
 
@@ -199,7 +248,8 @@ class BadgeViewPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final GlobalKey shareKey = GlobalKey(); // Key for capturing the widget as an image
+    final GlobalKey shareKey =
+        GlobalKey(); // Key for capturing the widget as an image
 
     return Scaffold(
       appBar: AppBar(
@@ -215,10 +265,10 @@ class BadgeViewPage extends StatelessWidget {
           text: forRecent
               ? 'Recent Badge'
               : badge.isUnlocked
-              ? 'Unlocked'
-              : badge.progress == 0
-              ? 'Locked'
-              : 'In Progress',
+                  ? 'Unlocked'
+                  : badge.progress == 0
+                      ? 'Locked'
+                      : 'In Progress',
           fontSize: 25.0,
           fontWeight: FontWeight.w800,
           color: Colors.white,
@@ -228,14 +278,14 @@ class BadgeViewPage extends StatelessWidget {
         centerTitle: true,
         actions: badge.isUnlocked
             ? [
-          Padding(
-            padding: const EdgeInsets.only(right: 10.0),
-            child: IconButton(
-              icon: const Icon(Icons.share, color: Colors.white),
-              onPressed: () => _captureAndShareBadge(context, shareKey),
-            ),
-          ),
-        ]
+                Padding(
+                  padding: const EdgeInsets.only(right: 10.0),
+                  child: IconButton(
+                    icon: const Icon(Icons.share, color: Colors.white),
+                    onPressed: () => _captureAndShareBadge(context, shareKey),
+                  ),
+                ),
+              ]
             : null,
       ),
       body: Container(
@@ -244,7 +294,9 @@ class BadgeViewPage extends StatelessWidget {
           child: Padding(
             padding: EdgeInsets.only(
               top: 100.0,
-              bottom: badge.progress > 0 && badge.progress < badge.amount ? 160 : 200,
+              bottom: badge.progress > 0 && badge.progress < badge.amount
+                  ? 160
+                  : 200,
               left: 20.0,
               right: 20.0,
             ),
@@ -404,7 +456,7 @@ class BadgeDetailPage extends StatelessWidget {
             ),
             child: Padding(
               padding:
-              const EdgeInsets.only(top: 15.0, left: 20.0, right: 10.0),
+                  const EdgeInsets.only(top: 15.0, left: 20.0, right: 10.0),
               child: GridView.builder(
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 4,
@@ -413,7 +465,7 @@ class BadgeDetailPage extends StatelessWidget {
                   // Adjust spacing between items
                   mainAxisSpacing: 25.0,
                   childAspectRatio:
-                  1.19, // Ensure items maintain a square aspect ratio
+                      1.19, // Ensure items maintain a square aspect ratio
                 ),
                 itemCount: badges.length, // Use dynamic length for badges
                 itemBuilder: (context, index) {
