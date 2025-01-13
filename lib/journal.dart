@@ -1,11 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:everfit/widgets/mini_info.dart';
-import 'package:everfit/widgets/text.dart';
 import 'package:flutter/material.dart';
-import 'package:table_calendar/table_calendar.dart'; // Install the package for the calendar widget
+import 'package:table_calendar/table_calendar.dart';
+import 'globals.dart' as globals;
 import 'colors.dart';
-import 'globals.dart' as globals; // Import your globals file
+import 'widgets/text.dart';
+import 'widgets/mini_info.dart';
 
+/// A page displaying a calendar for selecting dates which are mapped to unique journal entries.
 class JournalPage extends StatefulWidget {
   const JournalPage({super.key});
 
@@ -14,14 +15,14 @@ class JournalPage extends StatefulWidget {
 }
 
 class _JournalPageState extends State<JournalPage> {
-  DateTime _focusedDate = DateTime.now(); // Default to the current date
-  DateTime? _selectedDate;
+  DateTime _focusedDate = DateTime.now(); // Currently focused date
+  DateTime? _selectedDate; // Selected date
 
   @override
   void initState() {
     super.initState();
 
-    // Update the focused date if `globals.newDay` is true
+    // Update the focused date to the next day if a new day is detected
     if (globals.newDay) {
       _focusedDate = _focusedDate.add(const Duration(days: 1));
     }
@@ -34,7 +35,7 @@ class _JournalPageState extends State<JournalPage> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
-            Navigator.pop(context); // Navigate back to Home
+            Navigator.pop(context); // Navigate back to the previous screen
           },
           color: Colors.white,
         ),
@@ -50,11 +51,11 @@ class _JournalPageState extends State<JournalPage> {
         backgroundColor: CustomColors.primary,
       ),
       body: Container(
-        color: CustomColors.offWhite,
+        color: CustomColors.offWhite, // Background color
         child: Column(
           children: [
             const SizedBox(height: 15),
-            // Calendar Widget
+            // Calendar widget for selecting dates
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20.0),
               child: Container(
@@ -75,7 +76,7 @@ class _JournalPageState extends State<JournalPage> {
                       _selectedDate = selectedDay;
                       _focusedDate = focusedDay; // Update focused day
                     });
-                    // Navigate to the Journal Entry Page
+                    // Navigate to the Journal Entry Page for the selected day
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -105,8 +106,8 @@ class _JournalPageState extends State<JournalPage> {
                     ),
                   ),
                   headerStyle: HeaderStyle(
-                    formatButtonVisible: false,
-                    titleCentered: true,
+                    formatButtonVisible: false, // Hide the format button
+                    titleCentered: true, // Center the calendar title
                     titleTextStyle: const TextStyle(
                       color: CustomColors.darkGray,
                       fontSize: 18.0,
@@ -129,13 +130,14 @@ class _JournalPageState extends State<JournalPage> {
             const SizedBox(height: 15),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20.0),
-              child: MiniInfo(text: 'Tap on a date to open its journal entry'),
-            )
+              child: MiniInfo(
+                  text: 'Tap on a date to open its journal entry'), // Instruction text
+            ),
           ],
         ),
       ),
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 0,
+        currentIndex: 0, // Set the initial selected index
         selectedItemColor: CustomColors.primary,
         backgroundColor: Colors.white,
         unselectedItemColor: Colors.grey,
@@ -165,15 +167,16 @@ class _JournalPageState extends State<JournalPage> {
           ),
         ],
         onTap: (index) {
-          // Navigation logic
+          // Add navigation logic if needed
         },
       ),
     );
   }
 }
 
+/// A page to display and edit a journal entry for a specific date.
 class JournalEntryPage extends StatefulWidget {
-  final DateTime date;
+  final DateTime date; // The date for which the journal entry is displayed.
 
   const JournalEntryPage({Key? key, required this.date}) : super(key: key);
 
@@ -186,14 +189,14 @@ class _JournalEntryPageState extends State<JournalEntryPage> {
   final TextEditingController _bodyController = TextEditingController();
   final String userId = "B7FOLVzsJ0trs9DLvYcZ"; // Replace with the actual user ID
 
-  bool isToday = false; // Flag to check if the page is for today's journal
-  String? documentId; // Document ID for the selected journal entry
+  bool isToday = false; // Indicates if the journal is for the current day.
+  String? documentId; // ID of the journal entry document in Firestore.
 
   @override
   void initState() {
     super.initState();
-    isToday = _isToday(widget.date);
-    _fetchJournalEntry();
+    isToday = _isToday(widget.date); // Check if the date is today.
+    _fetchJournalEntry(); // Fetch the journal entry data.
   }
 
   @override
@@ -203,11 +206,13 @@ class _JournalEntryPageState extends State<JournalEntryPage> {
     super.dispose();
   }
 
+  /// Determines if the given date is today's date.
   bool _isToday(DateTime date) {
     final now = DateTime.now();
     return date.year == now.year && date.month == now.month && date.day == now.day;
   }
 
+  /// Fetches the journal entry from Firestore for the selected date.
   Future<void> _fetchJournalEntry() async {
     try {
       final snapshot = await FirebaseFirestore.instance
@@ -224,13 +229,14 @@ class _JournalEntryPageState extends State<JournalEntryPage> {
 
         final data = doc.data();
         _moodController.text = data['mood'] ?? "Mood";
-        _bodyController.text = data['body'] ?? "Type something";
+        _bodyController.text = data['body'] ?? "Type something...";
       }
     } catch (e) {
       print('Error fetching journal entry: $e');
     }
   }
 
+  /// Updates a specific field in the journal entry document.
   Future<void> _updateJournalEntry(String field, String value) async {
     if (documentId == null) return;
 
@@ -246,15 +252,11 @@ class _JournalEntryPageState extends State<JournalEntryPage> {
     }
   }
 
+  /// Handles back navigation by retracting the keyboard and navigating back.
   Future<void> _handleBackNavigation() async {
-    // Retract the keyboard
-    FocusScope.of(context).unfocus();
-
-    // Wait a few milliseconds
-    await Future.delayed(const Duration(milliseconds: 100));
-
-    // Navigate back
-    Navigator.pop(context);
+    FocusScope.of(context).unfocus(); // Hide the keyboard
+    await Future.delayed(const Duration(milliseconds: 100)); // Delay to avoid glitches
+    Navigator.pop(context); // Navigate back
   }
 
   @override
@@ -289,7 +291,7 @@ class _JournalEntryPageState extends State<JournalEntryPage> {
               cursorColor: CustomColors.primary,
               controller: _moodController,
               onChanged: (value) => _updateJournalEntry('mood', value),
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 40.0,
                 fontWeight: FontWeight.w800,
                 color: CustomColors.darkGray,
@@ -308,7 +310,7 @@ class _JournalEntryPageState extends State<JournalEntryPage> {
                 onChanged: (value) => _updateJournalEntry('body', value),
                 maxLines: null,
                 keyboardType: TextInputType.multiline,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 16.0,
                   fontWeight: FontWeight.w500,
                   color: CustomColors.darkGray,
@@ -364,20 +366,11 @@ class _JournalEntryPageState extends State<JournalEntryPage> {
     );
   }
 
+  /// Returns the name of the month for a given month index.
   String _getMonthName(int month) {
     const months = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December'
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
     ];
     return months[month - 1];
   }

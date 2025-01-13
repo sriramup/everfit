@@ -2,13 +2,15 @@ import 'package:flutter/material.dart';
 import '../colors.dart';
 import '../widgets/text.dart';
 
+/// Displays the step count and distance traveled for the day,
+/// alongside comparison indicators for previous data.
 class StepDistanceCard extends StatelessWidget {
-  final int steps; // Step count
-  final int stepDifference; // Difference for step count
-  final double distance; // Distance walked or run
-  final double distanceDifference; // Difference for distance
-  final bool? stepsIncOrDec; // If the arrow indicates an increase or decrease for steps
-  final bool? distanceIncOrDec; // If the arrow indicates an increase or decrease for distance
+  final int steps; // Total steps for the day
+  final int stepDifference; // Difference in step count compared to the previous period
+  final double distance; // Total distance walked or run (in miles)
+  final double distanceDifference; // Difference in distance compared to the previous period
+  final bool? stepsIncOrDec; // Indicator for increase (true) or decrease (false) in steps
+  final bool? distanceIncOrDec; // Indicator for increase (true) or decrease (false) in distance
 
   const StepDistanceCard({
     super.key,
@@ -38,6 +40,7 @@ class StepDistanceCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Title
                   CustomText(
                     text: "Step Count",
                     fontSize: 16.0,
@@ -46,6 +49,7 @@ class StepDistanceCard extends StatelessWidget {
                     squash: true,
                   ),
                   const SizedBox(height: 5.0),
+                  // Step count value
                   CustomText(
                     text: "$steps",
                     fontSize: 15.0,
@@ -55,6 +59,7 @@ class StepDistanceCard extends StatelessWidget {
                     textHeight: 0.8,
                   ),
                   const SizedBox(height: 10.0),
+                  // Step difference indicator
                   Row(
                     children: [
                       Icon(
@@ -68,8 +73,7 @@ class StepDistanceCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 5.0),
                       CustomText(
-                        text:
-                        "${stepsIncOrDec != null && stepsIncOrDec! ? 'Up' : 'Down'} $stepDifference",
+                        text: "${stepsIncOrDec != null && stepsIncOrDec! ? 'Up' : 'Down'} $stepDifference",
                         fontSize: 12.0,
                         fontWeight: FontWeight.w400,
                         color: stepsIncOrDec != null && stepsIncOrDec!
@@ -95,6 +99,7 @@ class StepDistanceCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Title
                   CustomText(
                     text: "Step Distance",
                     fontSize: 16.0,
@@ -103,6 +108,7 @@ class StepDistanceCard extends StatelessWidget {
                     squash: true,
                   ),
                   const SizedBox(height: 5.0),
+                  // Distance value
                   CustomText(
                     text: "${distance.toStringAsFixed(1)} MI",
                     fontSize: 15.0,
@@ -112,6 +118,7 @@ class StepDistanceCard extends StatelessWidget {
                     squash: true,
                   ),
                   const SizedBox(height: 10.0),
+                  // Distance difference indicator
                   Row(
                     children: [
                       Icon(
@@ -124,9 +131,9 @@ class StepDistanceCard extends StatelessWidget {
                         size: 20.0,
                       ),
                       const SizedBox(width: 5.0),
+                      // Up or down arrow logic similar to CalorieSummaryCard
                       CustomText(
-                        text:
-                        "${distanceIncOrDec != null && distanceIncOrDec! ? 'Up' : 'Down'} ${distanceDifference.toStringAsFixed(1)}",
+                        text: "${distanceIncOrDec != null && distanceIncOrDec! ? 'Up' : 'Down'} ${distanceDifference.toStringAsFixed(1)}",
                         fontSize: 12.0,
                         fontWeight: FontWeight.w400,
                         color: distanceIncOrDec != null && distanceIncOrDec!

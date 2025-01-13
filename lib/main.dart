@@ -14,7 +14,7 @@ import 'globals.dart' as globals;
 import 'widgets/button.dart';
 import 'package:intl/intl.dart';
 
-
+/// Entry point of the application
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -41,14 +41,14 @@ Future<void> main() async {
     DeviceOrientation.portraitUp,
   ]).then((_) {
     runApp(
-        AppLifecycleHandler(
+        AppLifecycleHandler( // Performs the check to validate new day
           child: MyApp(prefs: prefs),
         )
     );
   });
 }
 
-// Prompts app to open and load first screen
+/// Prompts app to open and load first screen
 class MyApp extends StatelessWidget {
   final SharedPreferences prefs;
   const MyApp({super.key, required this.prefs});
@@ -72,7 +72,7 @@ class MyApp extends StatelessWidget {
   }
 }
 
-// Welcome page for users to get started
+/// Welcome page for users to get started
 class StartupPage extends StatelessWidget {
   const StartupPage({super.key});
 
@@ -216,7 +216,7 @@ class StartupPage extends StatelessWidget {
   }
 }
 
-// Checks if app is terminating and saves relevant data to cache
+/// Checks if app is terminating and saves relevant data to cache
 class AppLifecycleHandler extends StatefulWidget {
   final Widget child;
 
@@ -240,7 +240,7 @@ class _AppLifecycleHandlerState extends State<AppLifecycleHandler>
     super.dispose();
   }
 
-  // Save previous login date before app terminates
+  /// Save previous login date before app terminates
   Future<void> saveLoginDateBeforeTermination() async {
     final prefs = await SharedPreferences.getInstance();
     // Set current login date as previous login date
@@ -250,7 +250,6 @@ class _AppLifecycleHandlerState extends State<AppLifecycleHandler>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.detached || state == AppLifecycleState.paused) {
-      // Save login date when app is closing or going to background
       saveLoginDateBeforeTermination();
     }
   }

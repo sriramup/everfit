@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+/// Provides constants for all theme-related colors used throughout the app
 class CustomColors {
   static const Color primary = Color(0xFFA5CEBC);
   static const Color primaryFaded = Color(0x45A5CEBC);

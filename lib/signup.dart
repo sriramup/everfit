@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'colors.dart';
 import 'widgets/button.dart';
 
-// Allows users to create credentials that store user-specific data
+/// Allows users to create credentials that store user-specific data
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
 

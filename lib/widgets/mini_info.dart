@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../colors.dart'; // Custom colors
 import '../widgets/text.dart'; // CustomText widget
 
+/// Provides a simple layout for small information text to be aesthetically displayed
 class MiniInfo extends StatelessWidget {
   final String text;
 
@@ -20,7 +21,7 @@ class MiniInfo extends StatelessWidget {
       ),
       child: Center(
         child: CustomText(
-          text: text,
+          text: text, // information text
           fontSize: 14.0,
           fontWeight: FontWeight.w500,
           color: CustomColors.darkGray,

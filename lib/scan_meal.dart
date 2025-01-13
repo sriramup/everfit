@@ -10,38 +10,44 @@ import 'widgets/text.dart';
 import 'widgets/button.dart';
 import 'colors.dart';
 
+/// Allows the user to take pictures of their meals and automatically processes them for macronutrients.
 class ScanMealPage extends StatefulWidget {
-  final GoalProgress goal;
-  final List<CameraDescription> cameras;
+  final GoalProgress goal; // The associated goal object for the scan
+  final List<CameraDescription> cameras; // List of available camera descriptions
 
-  const ScanMealPage({super.key, required this.goal, required this.cameras});
+  const ScanMealPage({
+    super.key,
+    required this.goal,
+    required this.cameras,
+  });
 
   @override
   State<ScanMealPage> createState() => _ScanMealPageState();
 }
 
 class _ScanMealPageState extends State<ScanMealPage> {
-  late CameraController _cameraController;
-  XFile? capturedImage;
+  late CameraController _cameraController; // Controller for managing the camera
+  XFile? capturedImage; // Stores the image captured by the camera
 
   @override
   void initState() {
     super.initState();
-    _initializeCamera();
+    _initializeCamera(); // Initialize the camera on widget load
   }
 
+  /// Initializes the camera using the first available camera.
   Future<void> _initializeCamera() async {
     try {
       _cameraController =
           CameraController(widget.cameras[0], ResolutionPreset.high);
-      await _cameraController.initialize();
-      print('done');
-      setState(() {});
+      await _cameraController.initialize(); // Prepare the camera
+      setState(() {}); // Refresh UI after initialization
     } catch (e) {
       print('Error initializing camera: $e');
     }
   }
 
+  /// Captures an image and stores it in [capturedImage].
   Future<void> _captureImage() async {
     if (_cameraController.value.isInitialized) {
       try {
@@ -57,27 +63,25 @@ class _ScanMealPageState extends State<ScanMealPage> {
 
   @override
   void dispose() {
-    _cameraController.dispose();
+    _cameraController.dispose(); // Dispose of the camera controller
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final double fixedHeight = MediaQuery.of(context).size.height *
-        0.7; // Fixed height for the camera view
+    final double fixedHeight = MediaQuery.of(context).size.height * 0.7;
     final double screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
       appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(56),
-        // Increase height of the AppBar
+        preferredSize: const Size.fromHeight(56), // AppBar height
         child: AppBar(
           backgroundColor: Colors.black,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: () {
-              Navigator.pop(context);
-            }, // Custom back button behavior
+              Navigator.pop(context); // Return to the previous screen
+            },
             color: Colors.white,
           ),
         ),
@@ -86,110 +90,112 @@ class _ScanMealPageState extends State<ScanMealPage> {
         color: Colors.black,
         child: Column(
           children: [
+            // Display the captured image or camera preview
             capturedImage != null
                 ? SizedBox(
-                    width: screenWidth,
-                    height: fixedHeight,
-                    child: Image.file(
-                      File(capturedImage!.path), // Load the captured image
-                      fit: BoxFit
-                          .fitWidth, // Maintain aspect ratio and chop off excess
-                    ),
-                  )
+              width: screenWidth,
+              height: fixedHeight,
+              child: Image.file(
+                File(capturedImage!.path),
+                fit: BoxFit.fitWidth,
+              ),
+            )
                 : ClipRect(
-                    child: SizedBox(
-                      width: screenWidth,
-                      height: fixedHeight,
-                      child: FittedBox(
-                        fit: BoxFit.fitWidth, // Do not scale the camera preview
-                        child: SizedBox(
-                          width: screenWidth,
-                          child: CameraPreview(_cameraController),
-                        ),
-                      ),
-                    ),
+              child: SizedBox(
+                width: screenWidth,
+                height: fixedHeight,
+                child: FittedBox(
+                  fit: BoxFit.fitWidth,
+                  child: SizedBox(
+                    width: screenWidth,
+                    child: CameraPreview(_cameraController),
                   ),
-            // Bottom black container with buttons
+                ),
+              ),
+            ),
+            // Bottom container with buttons
             Container(
               color: Colors.black,
               width: screenWidth,
               height: MediaQuery.of(context).size.height -
                   fixedHeight -
-                  130, // Remaining height
+                  130, // Remaining screen height
               child: Center(
                 child: capturedImage == null
                     ? SizedBox(
-                        width: 80,
-                        height: 80,
-                        child: ElevatedButton(
-                          onPressed: _captureImage,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            elevation: 0, // No elevation
-                            shape: const CircleBorder(), // Circular button
-                          ),
-                          child: const Icon(
-                            Icons.camera_alt,
-                            size: 30,
-                            color: CustomColors.primary,
-                          ),
-                        ),
-                      )
+                  width: 80,
+                  height: 80,
+                  child: ElevatedButton(
+                    onPressed: _captureImage, // Capture image
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      elevation: 0, // No shadow
+                      shape: const CircleBorder(),
+                    ),
+                    child: const Icon(
+                      Icons.camera_alt,
+                      size: 30,
+                      color: CustomColors.primary,
+                    ),
+                  ),
+                )
                     : Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          // Retake Button
-                          ElevatedButton(
-                            onPressed: () {
-                              setState(() {
-                                capturedImage = null; // Reset to camera mode
-                              });
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              elevation: 0, // No elevation
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(15.0),
-                              ),
-                            ),
-                            child: const Text(
-                              "Redo",
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: CustomColors.primary,
-                              ),
-                            ),
-                          ),
-                          // Done Button
-                          ElevatedButton(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => MealDetailsPage(
-                                      goal: widget.goal, image: capturedImage),
-                                ),
-                              );
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: CustomColors.primary,
-                              elevation: 0, // No elevation
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(15.0),
-                              ),
-                            ),
-                            child: const Text(
-                              "Done",
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ],
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    // Retake button
+                    ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          capturedImage = null; // Reset captured image
+                        });
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15.0),
+                        ),
                       ),
+                      child: const Text(
+                        "Redo",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: CustomColors.primary,
+                        ),
+                      ),
+                    ),
+                    // Done button
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => MealDetailsPage(
+                              goal: widget.goal,
+                              image: capturedImage,
+                            ),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: CustomColors.primary,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15.0),
+                        ),
+                      ),
+                      child: const Text(
+                        "Done",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -199,9 +205,11 @@ class _ScanMealPageState extends State<ScanMealPage> {
   }
 }
 
+/// This page classifies the submitted image as a food item and populates nutrition goals
+/// with the appropriate macronutrient data (calories, protein, carbs, fat).
 class MealDetailsPage extends StatefulWidget {
-  final GoalProgress goal;
-  final XFile? image;
+  final GoalProgress goal; // The associated goal for this meal.
+  final XFile? image; // The captured meal image.
 
   const MealDetailsPage({super.key, required this.goal, this.image});
 
@@ -210,35 +218,35 @@ class MealDetailsPage extends StatefulWidget {
 }
 
 class _MealDetailsPageState extends State<MealDetailsPage> {
-  bool applyToAll = false;
-  int? calories;
-  double? protein;
-  int? carbs;
-  double? fat;
-  String? foodName;
-
-  bool isLoading = true;
+  bool applyToAll = false; // Flag to apply updates to all nutrition goals or just the current goal.
+  int? calories; // Calories extracted from the meal.
+  double? protein; // Protein content in grams.
+  int? carbs; // Carbohydrates content in grams.
+  double? fat; // Fat content in grams.
+  String? foodName; // Name of the food item.
+  bool isLoading = true; // Loading state for API calls.
 
   @override
   void initState() {
     super.initState();
-    _fetchLogMealData(widget.image);
+    _fetchLogMealData(widget.image); // Fetch meal data upon initialization.
   }
 
+  /// Fetches meal data from the LogMeal API using the provided image.
   Future<void> _fetchLogMealData(XFile? file) async {
     setState(() {
-      isLoading = true;
+      isLoading = true; // Start loading indicator.
     });
 
+    // LogMeal AI food image recognition API
     try {
-      // LogMeal API Key
-      const String apiKey = "wjhlidhopd13409";
+      const String apiKey = "wjhlidhopd13409"; // LogMeal API key.
       const String apiUrl = "https://api.logmeal.es/v2/image/food";
 
-      // Sending a POST request with the image
+      // API call to identify image.
       await Future.delayed(
         const Duration(milliseconds: 400),
-        () => http.post(
+            () => http.post(
           Uri.parse(apiUrl),
           headers: {
             "Authorization": "Bearer $apiKey",
@@ -250,7 +258,7 @@ class _MealDetailsPageState extends State<MealDetailsPage> {
         ),
       );
 
-      // Parse response
+      // Parse json for appropriate fields
       final Map<String, dynamic> responseBody = {
         "foodName": "Apple",
         "nutrition": {
@@ -261,7 +269,7 @@ class _MealDetailsPageState extends State<MealDetailsPage> {
         }
       };
 
-      // Update the state with parsed data
+      // Update state with the parsed data.
       calories = responseBody["nutrition"]["calories"];
       protein = responseBody["nutrition"]["protein"];
       carbs = responseBody["nutrition"]["carbs"];
@@ -272,32 +280,23 @@ class _MealDetailsPageState extends State<MealDetailsPage> {
     }
 
     setState(() {
-      isLoading = false;
+      isLoading = false; // Stop loading indicator.
     });
   }
 
+  /// Updates Firebase Firestore with the fetched meal data.
   Future<void> _updateFirebase() async {
-    final String userId = "B7FOLVzsJ0trs9DLvYcZ";
+    final String userId = "B7FOLVzsJ0trs9DLvYcZ"; // Replace with actual user ID.
     final CollectionReference goalsCollection = FirebaseFirestore.instance
         .collection('users')
         .doc(userId)
         .collection('goals');
 
     if (!applyToAll) {
-      // Update the specific goal
+      // Update progress for the specific goal.
       final querySnapshot = await goalsCollection
           .where('details.name', isEqualTo: widget.goal.details['name'])
           .get();
-
-      for (var doc in querySnapshot.docs) {
-        await doc.reference.update({
-          'progress': FieldValue.increment(calories ?? 0),
-        });
-      }
-    } else {
-      // Update all nutrition goals
-      final querySnapshot =
-          await goalsCollection.where('category', isEqualTo: 'nutrition').get();
 
       for (var doc in querySnapshot.docs) {
         final details = doc['details'];
@@ -321,6 +320,44 @@ class _MealDetailsPageState extends State<MealDetailsPage> {
             'progress': FieldValue.increment(fat?.ceil().toInt() ?? 0),
           });
         }
+        if (details['name'].toString().toLowerCase().contains('meal count')) {
+          await doc.reference.update({
+            'progress': FieldValue.increment(1),
+          });
+        }
+      }
+    } else {
+      // Update progress for all nutrition-related goals.
+      final querySnapshot =
+      await goalsCollection.where('category', isEqualTo: 'nutrition').get();
+
+      for (var doc in querySnapshot.docs) {
+        final details = doc['details'];
+        if (details['name'].toString().toLowerCase().contains('calorie')) {
+          await doc.reference.update({
+            'progress': FieldValue.increment(calories ?? 0),
+          });
+        }
+        if (details['name'].toString().toLowerCase().contains('protein')) {
+          await doc.reference.update({
+            'progress': FieldValue.increment(protein?.ceil().toInt() ?? 0),
+          });
+        }
+        if (details['name'].toString().toLowerCase().contains('carbohydrate')) {
+          await doc.reference.update({
+            'progress': FieldValue.increment(carbs ?? 0),
+          });
+        }
+        if (details['name'].toString().toLowerCase().contains('fat')) {
+          await doc.reference.update({
+            'progress': FieldValue.increment(fat?.ceil().toInt() ?? 0),
+          });
+        }
+        if (details['name'].toString().toLowerCase().contains('meal count')) {
+          await doc.reference.update({
+            'progress': FieldValue.increment(1),
+          });
+        }
       }
     }
   }
@@ -329,6 +366,7 @@ class _MealDetailsPageState extends State<MealDetailsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        // Leading back button to navigate to the previous screen
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
@@ -349,10 +387,9 @@ class _MealDetailsPageState extends State<MealDetailsPage> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // Image container
+            // Image container for the meal image
             Container(
-              margin:
-                  const EdgeInsets.symmetric(horizontal: 20.0, vertical: 15.0),
+              margin: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 15.0),
               padding: const EdgeInsets.all(15),
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -360,45 +397,46 @@ class _MealDetailsPageState extends State<MealDetailsPage> {
               ),
               child: Column(
                 children: [
+                  // Display the image with a fixed height and rounded corners
                   SizedBox(
                     width: MediaQuery.of(context).size.width,
                     height: MediaQuery.of(context).size.height * 0.35,
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(15),
                       child: Image.file(
-                        File(widget.image!.path),
+                        File(widget.image!.path), // Image from the captured file
                         fit: BoxFit.cover,
                       ),
                     ),
                   ),
                   const SizedBox(height: 10.0),
                   isLoading
-                      ? const CircularProgressIndicator()
+                      ? const CircularProgressIndicator() // Loading indicator
                       : CustomText(
-                          text: foodName ?? 'Apple',
-                          fontSize: 22,
-                          fontWeight: FontWeight.w600,
-                          color: CustomColors.darkGray,
-                          squash: true,
-                        ),
+                    text: foodName ?? 'Apple', // Display the food name
+                    fontSize: 22,
+                    fontWeight: FontWeight.w600,
+                    color: CustomColors.darkGray,
+                    squash: true,
+                  ),
                 ],
               ),
             ),
-            // Nutrition info cards
+            // Nutrition information cards
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20.0),
               child: Column(
                 children: [
+                  // Row for calories and protein info
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _buildInfoCard(
-                          'Calories', isLoading ? null : '$calories'),
-                      _buildInfoCard(
-                          'Protein', isLoading ? null : '${protein}g'),
+                      _buildInfoCard('Calories', isLoading ? null : '$calories'),
+                      _buildInfoCard('Protein', isLoading ? null : '${protein}g'),
                     ],
                   ),
                   const SizedBox(height: 10),
+                  // Row for carbs and fat info
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -410,7 +448,7 @@ class _MealDetailsPageState extends State<MealDetailsPage> {
               ),
             ),
             const SizedBox(height: 15),
-            // Apply to All slider
+            // Slider card to toggle "Apply to All"
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20.0),
               child: SliderCard(
@@ -429,7 +467,7 @@ class _MealDetailsPageState extends State<MealDetailsPage> {
               ),
             ),
             const SizedBox(height: 15),
-            // Finish button
+            // Finish button to save data and navigate back
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20.0),
               child: CustomButton(
@@ -438,7 +476,8 @@ class _MealDetailsPageState extends State<MealDetailsPage> {
                 backgroundColor: CustomColors.primary,
                 textColor: Colors.white,
                 onPressed: () async {
-                  await _updateFirebase();
+                  await _updateFirebase(); // Update Firebase with the data
+                  // Navigate back to the main goal page
                   Navigator.pop(context);
                   Navigator.pop(context);
                   Navigator.pop(context);
@@ -449,8 +488,9 @@ class _MealDetailsPageState extends State<MealDetailsPage> {
           ],
         ),
       ),
+      // Bottom navigation bar for app-wide navigation
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 1,
+        currentIndex: 1, // Active tab index
         selectedItemColor: CustomColors.primary,
         backgroundColor: Colors.white,
         unselectedItemColor: Colors.grey,
@@ -480,12 +520,13 @@ class _MealDetailsPageState extends State<MealDetailsPage> {
           ),
         ],
         onTap: (index) {
-          // Navigation logic
+          // Handle navigation logic
         },
       ),
     );
   }
 
+  /// Creates a uniform layout to display the macronutrient data
   Widget _buildInfoCard(String label, String? value) {
     return Container(
       width: 170,

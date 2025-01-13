@@ -1,14 +1,17 @@
 import 'package:health/health.dart';
 
+/// A service class for interacting with health data on the user's device.
 class HealthService {
-  final Health _health = Health();
+  final Health _health = Health(); // Instance of the Health plugin
 
-  // Request authorization for the required data types
+  /// Requests authorization to access the specified health data types.
+  ///
+  /// Returns `true` if authorization is granted, otherwise `false`.
   Future<bool> requestAuthorization() async {
     var types = [
       HealthDataType.STEPS,
       HealthDataType.ACTIVE_ENERGY_BURNED,
-      HealthDataType.DISTANCE_WALKING_RUNNING
+      HealthDataType.DISTANCE_WALKING_RUNNING,
     ];
 
     try {
@@ -19,7 +22,9 @@ class HealthService {
     }
   }
 
-  // Fetch health data points for the last 24 hours
+  /// Fetches health data points for the past 24 hours.
+  ///
+  /// Returns a list of [HealthDataPoint] objects, or an empty list if an error occurs.
   Future<List<HealthDataPoint>> fetchHealthDataPoints() async {
     var types = [
       HealthDataType.STEPS,
@@ -27,7 +32,7 @@ class HealthService {
       HealthDataType.DISTANCE_WALKING_RUNNING,
     ];
     var now = DateTime.now();
-    var yesterday = now.subtract(Duration(days: 1));
+    var yesterday = now.subtract(const Duration(days: 1));
 
     try {
       return await Health().getHealthDataFromTypes(
@@ -36,7 +41,7 @@ class HealthService {
         endTime: now,
         recordingMethodsToFilter: [
           RecordingMethod.manual,
-          RecordingMethod.automatic
+          RecordingMethod.automatic,
         ],
       );
     } catch (e) {
@@ -45,7 +50,9 @@ class HealthService {
     }
   }
 
-  // Request permissions to write health data
+  /// Requests read permissions for the specified health data types.
+  ///
+  /// Returns `true` if permissions are granted, otherwise `false`.
   Future<bool> requestReadPermissions() async {
     var types = [
       HealthDataType.STEPS,
@@ -62,12 +69,14 @@ class HealthService {
       return await _health.requestAuthorization(types,
           permissions: permissions);
     } catch (e) {
-      print('Error requesting write permissions: $e');
+      print('Error requesting read permissions: $e');
       return false;
     }
   }
 
-  // Fetch total steps for today
+  /// Fetches the total steps recorded for today.
+  ///
+  /// Returns the total number of steps as an [int], or `null` if an error occurs.
   Future<int?> fetchTotalStepsToday() async {
     var now = DateTime.now();
     var midnight = DateTime(now.year, now.month, now.day);
@@ -80,6 +89,9 @@ class HealthService {
     }
   }
 
+  /// Fetches the total active calories burned for today.
+  ///
+  /// Returns the total calories burned as an [int], or `null` if an error occurs.
   Future<int?> fetchActiveCaloriesToday() async {
     var now = DateTime.now();
     var midnight = DateTime(now.year, now.month, now.day);
@@ -107,6 +119,9 @@ class HealthService {
     }
   }
 
+  /// Fetches the total distance walked or run for today.
+  ///
+  /// Returns the total distance in meters as a [double], or `null` if an error occurs.
   Future<double?> fetchDistanceToday() async {
     var now = DateTime.now();
     var midnight = DateTime(now.year, now.month, now.day);

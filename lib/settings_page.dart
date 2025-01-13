@@ -7,6 +7,8 @@ import 'widgets/tap_card.dart';
 import 'widgets/text.dart';
 import 'widgets/slider_card.dart';
 
+/// Allows the user to view and modify any account-specific data
+/// such as name, age, weight, and an option to stay signed in
 class SettingsPage extends StatefulWidget {
   const SettingsPage({Key? key}) : super(key: key);
 
@@ -22,10 +24,11 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   void initState() {
     super.initState();
-    _fetchUserName();
+    _fetchUserName(); // Fetches the user's name from Firebase
     _fetchKeepSignedInPreference();
   }
 
+  // Fetches the user's name from Firebase
   Future<void> _fetchUserName() async {
     final userId = "B7FOLVzsJ0trs9DLvYcZ";
     final doc =
@@ -35,6 +38,7 @@ class _SettingsPageState extends State<SettingsPage> {
     });
   }
 
+  // Fetches the "Keep Me Signed In" preference from the app's local cache
   Future<void> _fetchKeepSignedInPreference() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -42,6 +46,7 @@ class _SettingsPageState extends State<SettingsPage> {
     });
   }
 
+  // Updates the user's name in Firebase
   Future<void> _updateUserName(String newName) async {
     final userId = "B7FOLVzsJ0trs9DLvYcZ";
     await FirebaseFirestore.instance
@@ -53,6 +58,7 @@ class _SettingsPageState extends State<SettingsPage> {
     });
   }
 
+  // Updates the "Keep Me Signed In" preference in the app's local cache
   Future<void> _updateKeepSignedInPreference(bool value) async {
     final prefs = await SharedPreferences.getInstance();
     prefs.setBool('skipLogin', value);
@@ -61,6 +67,7 @@ class _SettingsPageState extends State<SettingsPage> {
     });
   }
 
+  // Shows a popup dialog that allows the user to edit their name
   void _showEditNamePopup() {
     final TextEditingController nameController =
     TextEditingController(text: userName);
@@ -89,6 +96,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 borderRadius: BorderRadius.circular(15),
               ),
               padding: const EdgeInsets.symmetric(horizontal: 15.0),
+              // Stores the name the user inputs
               child: TextField(
                 controller: nameController,
                 cursorColor: CustomColors.primary,
@@ -119,6 +127,7 @@ class _SettingsPageState extends State<SettingsPage> {
         actions: [
           GestureDetector(
             onTap: () {
+              // Updates the user's name with the new name
               _updateUserName(nameController.text.trim());
               Navigator.pop(context);
             },
@@ -274,6 +283,7 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 }
 
+/// Displays a short description about the app and its purpose
 class AboutAppPage extends StatelessWidget {
   const AboutAppPage({Key? key}) : super(key: key);
 
@@ -309,6 +319,7 @@ class AboutAppPage extends StatelessWidget {
             color: Colors.white,
             borderRadius: BorderRadius.circular(15.0),
           ),
+          // Description
           child: Text('data'),
         ),
       ),
@@ -350,6 +361,7 @@ class AboutAppPage extends StatelessWidget {
   }
 }
 
+/// Allows the user to view and edit their biometric data (height, weight, age, gender)
 class BiometricsPage extends StatefulWidget {
   const BiometricsPage({Key? key}) : super(key: key);
 
@@ -358,6 +370,7 @@ class BiometricsPage extends StatefulWidget {
 }
 
 class _BiometricsPageState extends State<BiometricsPage> {
+  // Respective controllers to capture user input for each field
   final TextEditingController _heightController = TextEditingController();
   final TextEditingController _weightController = TextEditingController();
   final TextEditingController _ageController = TextEditingController();
@@ -387,6 +400,7 @@ class _BiometricsPageState extends State<BiometricsPage> {
     super.dispose();
   }
 
+  // Fetches the user's current biometric data from Firebase
   Future<void> _fetchBiometricData() async {
     final userId = "B7FOLVzsJ0trs9DLvYcZ";
     final doc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
@@ -400,6 +414,7 @@ class _BiometricsPageState extends State<BiometricsPage> {
     });
   }
 
+  // Updates the Firebase data with the user's new input
   Future<void> _updateBiometricData(String field, dynamic value) async {
     final userId = "B7FOLVzsJ0trs9DLvYcZ";
     await FirebaseFirestore.instance.collection('users').doc(userId).update({
@@ -407,6 +422,7 @@ class _BiometricsPageState extends State<BiometricsPage> {
     });
   }
 
+  // Check if the user's input is valid according to its field
   void _submitField(String field, String value, {bool isText = false}) {
     final newValue = isText ? value : int.tryParse(value);
     if (newValue != null) {
@@ -483,6 +499,7 @@ class _BiometricsPageState extends State<BiometricsPage> {
     );
   }
 
+  // Provides a uniform display the editable fields
   Widget _buildBiometricCard(String label, TextEditingController controller, String unit, String field,
       {bool isText = false}) {
     return Container(
@@ -527,6 +544,7 @@ class _BiometricsPageState extends State<BiometricsPage> {
                   contentPadding: EdgeInsets.symmetric(vertical: 10.0),
                 ),
                 onSubmitted: (value) {
+                  // Initiate the Firestore update
                   _submitField(field, value, isText: isText);
                 },
               ),

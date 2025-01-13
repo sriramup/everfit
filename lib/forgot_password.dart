@@ -1,4 +1,6 @@
 import 'dart:math';
+import 'package:everfit/home_page.dart';
+import 'package:everfit/signup.dart';
 import 'package:everfit/widgets/text.dart';
 import 'package:flutter/material.dart';
 import 'package:mailer/mailer.dart';
@@ -18,7 +20,7 @@ class ForgotPasswordPage extends StatefulWidget {
 class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   late String _generatedCode; // Randomly generated code
   final List<TextEditingController> _codeControllers =
-  List.generate(4, (_) => TextEditingController()); // 4 controllers for OTP fields
+  List.generate(4, (_) => TextEditingController()); // 4 controllers for each random number fields
 
   @override
   void initState() {
@@ -42,9 +44,9 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   }
 
   Future<void> _sendRecoveryEmail() async {
-    final smtpServer = gmail('noreply.everfit@gmail.com', 'Camp@8134'); // Your email credentials
+    final smtpServer = gmail('noreply.everfit@gmail.com', 'test@1234'); // recovery email address
     final message = Message()
-      ..from = Address('noreply.everfit@gmail.com', 'EverFit') // Your app name
+      ..from = Address('noreply.everfit@gmail.com', 'EverFit') // Email title
       ..recipients.add(widget.email) // Recipient email
       ..subject = 'Password Recovery Code'
       ..text = 'Your recovery code is: $_generatedCode'; // Email body
@@ -63,14 +65,18 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
   void _verifyCode() {
     final enteredCode =
-    _codeControllers.map((controller) => controller.text).join(); // Combine inputs
+    _codeControllers.map((controller) => controller.text).join(); // Combine digits to check validation
 
+    // Cross check with randomly generated code
     if (enteredCode == _generatedCode) {
       // Navigate or show success
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Code verified successfully!')),
       );
-      // TODO: Navigate to the next page
+      // Allow user to create new password
+      Navigator.push(context,
+          MaterialPageRoute(builder: (builder) => SignupPage()),
+      );
     } else {
       // Show error
       ScaffoldMessenger.of(context).showSnackBar(
@@ -88,7 +94,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           // Background Image
           Positioned.fill(
             child: Image.asset(
-              'assets/images/background.png', // Replace with your image path
+              'assets/images/background.png',
               fit: BoxFit.cover,
             ),
           ),
@@ -155,6 +161,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                       // OTP Fields
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        // Allows user to input code from numpad
                         children: List.generate(
                           4,
                               (index) => SizedBox(
@@ -189,7 +196,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                       // Verify Code Button
                       CustomButton(
                         text: 'Verify Code',
-                        onPressed: _verifyCode, // Verify code logic
+                        onPressed: _verifyCode,
                         backgroundColor: CustomColors.primary,
                       ),
                       SizedBox(height: 20),

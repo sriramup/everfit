@@ -6,7 +6,7 @@ import 'colors.dart';
 import 'layout.dart';
 import 'widgets/button.dart';
 
-// Checks if user account exists to load relevant data
+/// Checks if user account exists to load relevant data
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import '../globals.dart' as globals;
 
+/// Displays a daily quote image.
+/// The image displayed rotates based on the value of `globals.newDay`.
 class DailyQuote extends StatelessWidget {
-  final String dayOne; // Image path for day one
-  final String dayTwo; // Image path for day two
+  final String dayOne; // Image path for the first day's quote
+  final String dayTwo; // Image path for the second day's quote
 
   const DailyQuote({
     super.key,
@@ -13,20 +15,20 @@ class DailyQuote extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Determine which image to show based on globals.newDay
+    // Select the image based on the `globals.newDay` flag.
     final imagePath = globals.newDay ? dayTwo : dayOne;
 
     return Padding(
-      padding: const EdgeInsets.only(left: 20.0, right: 20, top: 10.0),
+      padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 10.0),
       child: Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(15.0),
+          borderRadius: BorderRadius.circular(15.0), // Rounded corners
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(15.0),
+          borderRadius: BorderRadius.circular(15.0), // Clip image to rounded corners
           child: Image.asset(
-            imagePath, // Use the determined image path
-            fit: BoxFit.cover,
+            imagePath, // Display the selected image
+            fit: BoxFit.cover, // Ensure the image covers the container
           ),
         ),
       ),

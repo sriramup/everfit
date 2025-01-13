@@ -1,9 +1,9 @@
 import 'package:everfit/widgets/text.dart';
 import 'package:flutter/cupertino.dart'; // Import Cupertino widgets
 import 'package:flutter/material.dart';
-
 import '../colors.dart';
 
+/// Provides a layout for all IOS switches to be aesthetically displayed
 class SliderCard extends StatefulWidget {
   final String text;
   final VoidCallback onActivate; // Callback for activation

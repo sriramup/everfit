@@ -5,6 +5,7 @@ import 'dart:convert';
 import '../widgets/text.dart'; // CustomText widget
 import '../colors.dart';
 
+/// A chat interface for interacting with "Sage," a health and fitness-related assistant powered by OpenAI's GPT 3.5 turbo model.
 class SagePage extends StatefulWidget {
   const SagePage({super.key});
 
@@ -13,14 +14,20 @@ class SagePage extends StatefulWidget {
 }
 
 class _SagePageState extends State<SagePage> {
+  // Controller for the user's message input field
   final TextEditingController _messageController = TextEditingController();
-  final List<Map<String, String>> _messages = []; // Chat history
+
+  // Chat history: a list of messages containing role (user/assistant) and content
+  final List<Map<String, String>> _messages = [];
+
+  // Loading state to indicate when a message is being processed
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    // Add initial message from Sage
+
+    // Add an initial greeting message from the assistant
     _messages.add({
       'role': 'assistant',
       'content': 'How may I help you today?',
@@ -29,21 +36,23 @@ class _SagePageState extends State<SagePage> {
 
   @override
   void dispose() {
-    _messageController.dispose();
+    _messageController.dispose(); // Dispose of the controller when not in use
     super.dispose();
   }
 
+  /// Sends a user's message to the assistant and retrieves a response.
   Future<void> _sendMessage(String message) async {
     setState(() {
-      _isLoading = true;
-      _messages.add({'role': 'user', 'content': message});
+      _isLoading = true; // Show loading indicator
+      _messages.add({'role': 'user', 'content': message}); // Add user's message to the chat history
     });
 
     try {
+      // Make a POST request to the OpenAI API
       final response = await http.post(
         Uri.parse('https://api.openai.com/v1/chat/completions'),
         headers: {
-          'Authorization': 'Bearer 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', // Your API key
+          'Authorization': 'Bearer <your-api-key>', // Replace with your OpenAI API key
           'Content-Type': 'application/json',
         },
         body: json.encode({
@@ -52,7 +61,7 @@ class _SagePageState extends State<SagePage> {
             {
               'role': 'system',
               'content':
-              'You are a helpful assistant that gives advice related to the user\'s health and fitness-related questions.'
+              'You are a helpful assistant that gives advice related to the user\'s health and fitness-related questions.',
             },
             ..._messages.map((msg) => {
               'role': msg['role'],
@@ -63,38 +72,42 @@ class _SagePageState extends State<SagePage> {
       );
 
       if (response.statusCode == 200) {
+        // Parse the API response
         final data = json.decode(response.body);
         final chatResponse = data['choices'][0]['message']['content'];
 
         setState(() {
+          // Add the assistant's response to the chat history
           _messages.add({'role': 'assistant', 'content': chatResponse});
         });
       } else {
+        // Handle errors from the API
         setState(() {
           _messages.add({
             'role': 'assistant',
-            'content': 'Sorry, I could not process your request.'
+            'content': 'Sorry, I could not process your request.',
           });
         });
       }
     } catch (e) {
+      // Handle network or other errors
       setState(() {
         _messages.add({
           'role': 'assistant',
-          'content': 'An error occurred. Please try again later.'
+          'content': 'An error occurred. Please try again later.',
         });
       });
     } finally {
       setState(() {
-        _isLoading = false;
-        _messageController.clear();
+        _isLoading = false; // Hide loading indicator
+        _messageController.clear(); // Clear the input field
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isKeyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
+    final isKeyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0; // Check if the keyboard is visible
 
     return Scaffold(
       resizeToAvoidBottomInset: true, // Allow resizing when the keyboard opens
@@ -102,8 +115,8 @@ class _SagePageState extends State<SagePage> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
-            FocusScope.of(context).unfocus(); // Ensure the keyboard retracts
-            Navigator.pop(context); // Navigate back after a small delay
+            FocusScope.of(context).unfocus(); // Hide the keyboard
+            Navigator.pop(context); // Navigate back
           },
           color: Colors.white,
         ),
@@ -123,10 +136,10 @@ class _SagePageState extends State<SagePage> {
           Expanded(
             child: Column(
               children: [
-                const SizedBox(height: 15), // Fixed padding before messages
+                const SizedBox(height: 15),
                 Expanded(
                   child: ListView.builder(
-                    reverse: isKeyboardVisible, // Reverse only when keyboard is visible
+                    reverse: isKeyboardVisible, // Reverse the order when keyboard is visible
                     itemCount: _messages.length,
                     itemBuilder: (context, index) {
                       final message = isKeyboardVisible
@@ -147,8 +160,7 @@ class _SagePageState extends State<SagePage> {
                                 backgroundColor: CustomColors.turquoise,
                                 child: Padding(
                                   padding: const EdgeInsets.all(3.0),
-                                  child:
-                                  Image.asset('assets/images/sage.png'),
+                                  child: Image.asset('assets/images/sage.png'),
                                 ),
                               ),
                             const SizedBox(width: 10),
@@ -187,12 +199,13 @@ class _SagePageState extends State<SagePage> {
               padding: EdgeInsets.all(8.0),
               child: CircularProgressIndicator(),
             ),
+          // Message input field and send button
           Container(
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.only(
-                topLeft: const Radius.circular(15.0),
-                topRight: const Radius.circular(15.0),
+                topLeft: Radius.circular(15.0),
+                topRight: Radius.circular(15.0),
               ),
             ),
             padding: const EdgeInsets.only(
@@ -200,34 +213,27 @@ class _SagePageState extends State<SagePage> {
             child: Row(
               children: [
                 Expanded(
-                  child: Transform(
-                    transform: Matrix4.diagonal3Values(1.0, 0.95, 1.0),
-                    alignment: Alignment.centerLeft,
-                    child: TextField(
-                      controller: _messageController,
-                      cursorColor: CustomColors.primary, // Cursor color
-                      style: const TextStyle(
+                  child: TextField(
+                    controller: _messageController,
+                    cursorColor: CustomColors.primary,
+                    style: const TextStyle(
+                      fontSize: 16.0,
+                      fontWeight: FontWeight.w500,
+                      color: CustomColors.darkGray,
+                    ),
+                    decoration: const InputDecoration(
+                      hintText: "Message Sage",
+                      hintStyle: TextStyle(
                         fontSize: 16.0,
                         fontWeight: FontWeight.w500,
-                        letterSpacing: -0.7,
-                        color: CustomColors.darkGray, // Text color
+                        color: CustomColors.gray,
                       ),
-                      decoration: const InputDecoration(
-                        hintText: "Message Sage",
-                        hintStyle: TextStyle(
-                          fontSize: 16.0,
-                          fontWeight: FontWeight.w500,
-                          letterSpacing: -0.7,
-                          color: CustomColors.gray,
-                        ),
-                        border: InputBorder.none,
-                      ),
+                      border: InputBorder.none,
                     ),
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.send,
-                      color: CustomColors.primary),
+                  icon: const Icon(Icons.send, color: CustomColors.primary),
                   onPressed: () {
                     if (_messageController.text.isNotEmpty) {
                       _sendMessage(_messageController.text.trim());
@@ -242,3 +248,4 @@ class _SagePageState extends State<SagePage> {
     );
   }
 }
+

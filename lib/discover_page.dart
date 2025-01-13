@@ -5,10 +5,9 @@ import 'widgets/weather_card.dart'; // Import your WeatherCard widget
 import 'widgets/day_tips.dart';
 import 'widgets/tap_card.dart';
 import 'widgets/sage.dart';
-
-
 import 'globals.dart' as globals;
 
+/// Goto for lifestyle related information and tips conveyed through a personal assistant
 class DiscoverPage extends StatefulWidget {
   const DiscoverPage({Key? key}) : super(key: key);
 
@@ -23,7 +22,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
       color: CustomColors.offWhite,
       child: Stack(
         children: [
-          // Main content
+          // Allows page to scroll
           SingleChildScrollView(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20.0),
@@ -31,8 +30,9 @@ class _DiscoverPageState extends State<DiscoverPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 15),
-                  const WeatherCard(), // Your WeatherCard widget
+                  const WeatherCard(), // Displays weather according to current location
                   const SizedBox(height: 15),
+                  // Depending on the day, different suggestions are given
                   globals.newDay
                       ? ActivityOfTheDay(
                     videoLink: "https://www.youtube.com/watch?v=dj03_VDetdw", // Indoor Cardio
@@ -52,6 +52,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
                     subText: 'Ask Sage!',
                     imagePath: 'assets/images/sage.png',
                     onPressed: () {
+                      // Opens up a chat to interact with an AI-powered assistant
                       Navigator.push(
                         context,
                         MaterialPageRoute(builder: (context) => SagePage()),

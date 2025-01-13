@@ -20,6 +20,11 @@ import 'notifications.dart';
 
 
 
+/// The main page for managing and displaying a list of user goals.
+///
+/// This page is responsible for fetching the user's goals from Firestore,
+/// updating goal progress, checking goal completion status, and maintaining
+/// a periodic update mechanism to keep goal data in sync.
 class GoalsPage extends StatefulWidget {
   const GoalsPage({super.key});
 
@@ -28,17 +33,21 @@ class GoalsPage extends StatefulWidget {
 }
 
 class _GoalsPageState extends State<GoalsPage> {
+  /// A timer that periodically updates the goal data.
   Timer? _timer;
+
+  /// A service to fetch health-related data (e.g., steps, calories).
   final HealthService _healthService = HealthService();
 
-  // Current goal list
+  /// The current list of user goals displayed on the page.
   List<GoalProgress> goals = [];
 
+  /// Initializes the state by starting the timer and fetching goals.
   @override
   void initState() {
     super.initState();
-    _startTimer();
-    _fetchAndUpdateGoals(); // Initial fetch
+    _startTimer(); // Begins periodic goal updates
+    _fetchAndUpdateGoals(); // Fetch goals for the first time
   }
 
   @override
@@ -53,8 +62,9 @@ class _GoalsPageState extends State<GoalsPage> {
     });
   }
 
+  /// Checks if a goal has been completed (its progress matches or exceeds its target)
   Future<void> _checkCompletion(GoalProgress goal) async {
-    final String userId = "B7FOLVzsJ0trs9DLvYcZ"; // Replace with actual user ID
+    final String userId = "B7FOLVzsJ0trs9DLvYcZ";
     final goalId = goal.documentID;
     final firestore = FirebaseFirestore.instance;
 
@@ -70,9 +80,11 @@ class _GoalsPageState extends State<GoalsPage> {
       final progress = data['progress'];
       final details = data['details'] as Map<String, dynamic>;
       final target = details['target'];
-      final type = details['type']; // New field
+      final type = details['type'];
       final complete = data['complete'];
 
+      /* Depending on whether the goal is trying to be met or avoided,
+      completion criteria changes. */
       bool isComplete;
       if (type == 'avoid') {
         isComplete = progress < target;
@@ -82,6 +94,7 @@ class _GoalsPageState extends State<GoalsPage> {
         return; // Skip if type is invalid or undefined
       }
 
+      /// If the goal is incomplete in the database but complete now.
       if (!complete && isComplete) {
         final userDoc = await firestore
             .collection('users')
@@ -94,7 +107,7 @@ class _GoalsPageState extends State<GoalsPage> {
           final data = userDoc.data() as Map<String, dynamic>;
           final currentStreak = data['streak'] ?? 0;
 
-          // Mark as complete and increment streak
+          /// Mark as complete and increment the streak.
           await firestore
               .collection('users')
               .doc(userId)
@@ -102,6 +115,7 @@ class _GoalsPageState extends State<GoalsPage> {
               .doc(goalId)
               .update({'complete': true, 'streak': currentStreak + 1});
         }
+        /// If the goal is complete in the database but incomplete now.
       } else if (complete && !isComplete) {
         final userDoc = await firestore
             .collection('users')
@@ -114,7 +128,7 @@ class _GoalsPageState extends State<GoalsPage> {
           final data = userDoc.data() as Map<String, dynamic>;
           final currentStreak = data['streak'] ?? 0;
 
-          // Mark as complete and increment streak
+          // Mark as incomplete and decrement streak
           await firestore
               .collection('users')
               .doc(userId)
@@ -126,9 +140,12 @@ class _GoalsPageState extends State<GoalsPage> {
     }
   }
 
+  /// Updates progress for goals that are tracked intuitively
+  /// For movement-related goals, this means using Apple Health
   Future<void> _updateIntuitive(GoalProgress goal) async {
     if (goal.category == 'active') {
       try {
+        // Fetch relevant health data based on the goal name
         String goalName = goal.details['name'];
         dynamic fetchedData;
 
@@ -145,10 +162,11 @@ class _GoalsPageState extends State<GoalsPage> {
         }
 
         final String userId =
-            "B7FOLVzsJ0trs9DLvYcZ"; // Replace with actual user ID
+            "B7FOLVzsJ0trs9DLvYcZ";
         final goalId = goal.documentID;
         final firestore = FirebaseFirestore.instance;
 
+        // Update goal progress in Firestore
         final DocumentSnapshot userDoc = await firestore
             .collection('users')
             .doc(userId)
@@ -203,9 +221,11 @@ class _GoalsPageState extends State<GoalsPage> {
     }
   }
 
+  /// Fetches goals from Firestore, checks for completion, and updates progress intuitively.
   Future<void> _fetchAndUpdateGoals() async {
     try {
       final fetchedGoals = await _fetchGoals();
+      // Iterate through each goal to perform updates
       for (GoalProgress g in fetchedGoals) {
         if (g.details['intuitiveUpdate'] != null) {
           if (g.details['intuitiveUpdate']) {
@@ -215,6 +235,7 @@ class _GoalsPageState extends State<GoalsPage> {
         _checkCompletion(g);
       }
 
+      // Update the UI if the goal list has changed
       if (_isGoalListChanged(fetchedGoals, goals)) {
         setState(() {
           goals = fetchedGoals;
@@ -225,6 +246,7 @@ class _GoalsPageState extends State<GoalsPage> {
     }
   }
 
+  /// Compares two lists of goals to check if there are any changes.
   bool _isGoalListChanged(
       List<GoalProgress> newList, List<GoalProgress> currentList) {
     if (newList.length != currentList.length) {
@@ -244,6 +266,7 @@ class _GoalsPageState extends State<GoalsPage> {
     return false;
   }
 
+  /// Fetches the list of goals from Firestore.
   Future<List<GoalProgress>> _fetchGoals() async {
     final List<GoalProgress> fetchedGoals = [];
 
@@ -287,6 +310,7 @@ class _GoalsPageState extends State<GoalsPage> {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 15.0),
+      // Displays each goal the user has active in a vertical column
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         ...goals.map((goal) => goal),
         const MiniInfo(text: 'Tap and hold to remove a goal'),
@@ -295,19 +319,40 @@ class _GoalsPageState extends State<GoalsPage> {
   }
 }
 
+/// Displays information about a specific goal, and provides functionality for interacting with the goal,
+/// Such as opening up a more detailed popup to edit and analyze.
 class GoalProgress extends StatelessWidget {
+  /// Analysis data for the goal, which may include trends or statistics.
   final Map<String, dynamic>? analysis;
+
+  /// The category of the goal (e.g., "active", "nutrition", "weight").
   final String category;
+
   final String name;
+
+  /// The unit of measurement for the goal's progress (e.g., "steps", "calories").
   final String units;
+
   final bool complete;
+
+  /// Detailed metadata about the goal (e.g., target, period, reminders).
   final Map<String, dynamic> details;
+
+  /// The current progress towards achieving the goal.
   final int progress;
+
+  /// The target value required to complete the goal.
   final int target;
+
   final int streak;
+
+  /// The Firestore document ID for this goal.
   final String documentID;
+
+  /// A callback function that is triggered when the goal is deleted.
   final VoidCallback onDelete;
 
+  /// Creates an instance of the `GoalProgress` widget.
   const GoalProgress({
     super.key,
     this.analysis,
@@ -323,10 +368,12 @@ class GoalProgress extends StatelessWidget {
     required this.onDelete,
   });
 
+  /// Deletes the goal from Firestore and triggers the `onDelete` callback.
+  ///
+  /// If an error occurs during deletion, a snack bar is shown with an error message.
   Future<void> _deleteGoal(BuildContext context) async {
     try {
-      final String userId =
-          "B7FOLVzsJ0trs9DLvYcZ"; // Replace with actual user ID
+      final String userId = "B7FOLVzsJ0trs9DLvYcZ"; // Replace with actual user ID
       await FirebaseFirestore.instance
           .collection('users')
           .doc(userId)
@@ -334,7 +381,7 @@ class GoalProgress extends StatelessWidget {
           .doc(documentID)
           .delete();
 
-      onDelete();
+      onDelete(); // Refreshes the page to no longer show the goal
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Error deleting goal')),
@@ -342,6 +389,9 @@ class GoalProgress extends StatelessWidget {
     }
   }
 
+  /// Displays a confirmation dialog for deleting the goal.
+  ///
+  /// If the user confirms, the goal is deleted using `_deleteGoal`.
   void _showDeleteGoalPopup(BuildContext context) {
     showDialog(
       context: context,
@@ -399,12 +449,20 @@ class GoalProgress extends StatelessWidget {
     );
   }
 
+  /// Builds the widget tree for the goal's UI representation.
+  ///
+  /// The widget includes:
+  /// - An icon representing the category of the goal.
+  /// - The goal's name, progress, and streak.
+  /// - A progress bar indicating the percentage completion of the goal.
+  /// - A "COMPLETE" badge if the goal is finished.
   @override
   Widget build(BuildContext context) {
     final progressPercentage = (progress / target).clamp(0.0, 1.0);
 
     return GestureDetector(
       onTap: () {
+        // Navigates to the detailed page of the goal when tapped.
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -426,11 +484,12 @@ class GoalProgress extends StatelessWidget {
         );
       },
       onLongPress: () async {
+        // Opens the delete confirmation popup when long-pressed.
         _showDeleteGoalPopup(context);
       },
       child: Column(
         children: [
-          if (complete) SizedBox(height: 15.0),
+          if (complete) const SizedBox(height: 15.0),
           Stack(
             clipBehavior: Clip.none,
             children: [
@@ -448,21 +507,27 @@ class GoalProgress extends StatelessWidget {
                       padding: const EdgeInsets.only(left: 15.0, right: 15),
                       child: Row(
                         children: [
+                          // Icon based on the goal's category
                           CircleAvatar(
                             radius: 20.0,
                             backgroundColor: CustomColors.primaryFaded,
                             child: Icon(
                               category == 'active'
                                   ? Icons.local_fire_department
-                                  : category == 'nutrition' ? Icons.no_food_rounded
-                                  : category == 'weight' ? Icons.monitor_weight
-                                  : category == 'drink' ? Icons.local_drink
-                                  : category == 'custom' ? Icons.folder_special
+                                  : category == 'nutrition'
+                                  ? Icons.no_food_rounded
+                                  : category == 'weight'
+                                  ? Icons.monitor_weight
+                                  : category == 'drink'
+                                  ? Icons.local_drink
+                                  : category == 'custom'
+                                  ? Icons.folder_special
                                   : Icons.mode_night,
                               color: CustomColors.primary,
                             ),
                           ),
                           const SizedBox(width: 10.0),
+                          // Goal name
                           CustomText(
                             text: details['name'] ?? 'Unnamed Goal',
                             fontSize: 16.0,
@@ -471,18 +536,19 @@ class GoalProgress extends StatelessWidget {
                             squash: true,
                           ),
                           const SizedBox(width: 10.0),
-                          streak > 0 ?
-                            Expanded(
-                              child: CustomText(
-                                text: "🔥 $streak",
-                                fontSize: 13.0,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.orange,
-                                squash: true,
-                              ),
-                            )
-                          : Expanded(child: Container(),
-                          ),
+                          // Streak display
+                          streak > 0
+                              ? Expanded(
+                            child: CustomText(
+                              text: "🔥 $streak",
+                              fontSize: 13.0,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.orange,
+                              squash: true,
+                            ),
+                          )
+                              : Expanded(child: Container()),
+                          // Progress display
                           Container(
                             decoration: BoxDecoration(
                               color: CustomColors.primaryFaded,
@@ -504,6 +570,7 @@ class GoalProgress extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 13.0),
+                    // Progress bar
                     LinearPercentIndicator(
                       lineHeight: 3.0,
                       percent: progressPercentage,
@@ -514,6 +581,7 @@ class GoalProgress extends StatelessWidget {
                   ],
                 ),
               ),
+              // "COMPLETE" badge if the goal is finished
               if (complete)
                 Positioned(
                   top: -15,
@@ -524,11 +592,8 @@ class GoalProgress extends StatelessWidget {
                     child: Container(
                       decoration: BoxDecoration(
                         color: CustomColors.red,
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(10.0),
-                          topRight: Radius.circular(10.0),
-                          bottomLeft: Radius.circular(10.0),
-                          bottomRight: Radius.circular(10.0),
+                        borderRadius: const BorderRadius.all(
+                          Radius.circular(10.0),
                         ),
                       ),
                       padding: const EdgeInsets.symmetric(vertical: 5.0),
@@ -551,6 +616,8 @@ class GoalProgress extends StatelessWidget {
   }
 }
 
+/// Displays the detailed view of a goal and provides functionalities
+/// for editing progress, viewing analysis, and managing goal settings.
 class GoalDetailPage extends StatefulWidget {
   final GoalProgress goal;
 
@@ -561,14 +628,13 @@ class GoalDetailPage extends StatefulWidget {
 }
 
 class _GoalDetailPageState extends State<GoalDetailPage> {
-  late int progress;
-  final TextEditingController _progressController =
-      TextEditingController(); // Add this
-  final FocusNode _progressFocusNode = FocusNode(); // Add FocusNode
-  final PageController _pageController = PageController(initialPage: 0);
-  int _currentIndex = 0;
-  String _selectedTimeframe = 'Daily';
-  Map<String, dynamic> analysisData = {};
+  late int progress; // Tracks the current progress of the goal.
+  final TextEditingController _progressController = TextEditingController(); // Controller for progress input.
+  final FocusNode _progressFocusNode = FocusNode(); // Focus node to detect when input loses focus.
+  final PageController _pageController = PageController(initialPage: 0); // Controls the tab navigation.
+  int _currentIndex = 0; // Tracks the current tab index.
+  String _selectedTimeframe = 'Daily'; // Selected timeframe for analysis (Daily/Weekly/Monthly).
+  Map<String, dynamic> analysisData = {}; // Stores analysis data retrieved from Firestore.
 
   @override
   void initState() {
@@ -576,7 +642,7 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
     progress = widget.goal.progress;
     _progressController.text = progress.toString(); // Initialize the controller
 
-    // Add a listener to handle focus changes
+    // Add a listener to handle when keyboard is active
     _progressFocusNode.addListener(() {
       if (!_progressFocusNode.hasFocus) {
         // If the TextField loses focus, call updateProgress
@@ -597,12 +663,13 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
     super.dispose();
   }
 
+  /// Updates the goal's progress in Firestore and reflects changes in the UI.
   void _updateProgress(int newProgress) async {
     try {
-      final String userId = "B7FOLVzsJ0trs9DLvYcZ"; // Replace with actual user ID
+      final String userId = "B7FOLVzsJ0trs9DLvYcZ";
       final FirebaseFirestore firestore = FirebaseFirestore.instance;
 
-      // Update the goal's progress
+      // Update the goal's progress in Firestore
       await firestore
           .collection('users')
           .doc(userId)
@@ -610,7 +677,7 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
           .doc(widget.goal.documentID)
           .update({'progress': newProgress});
 
-      // Check if the goal affects the user's weight
+      // Adjust biometrics if the goal affects the user's weight
       if (widget.goal.details['name'].toString().toLowerCase().contains('weight gain')) {
         await firestore.collection('users').doc(userId).update({
           'biometrics.weight': FieldValue.increment(newProgress - progress),
@@ -621,7 +688,7 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
         });
       }
 
-      // Update badges if their name contains any word from the goal's name
+      // Update badge progress if its category matches with the goal's category
       final goalNameWords = widget.goal.details['name']
           .toString()
           .toLowerCase()
@@ -658,6 +725,7 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
     }
   }
 
+  /// Switches between tabs in the PageView and fetches relevant analysis data.
   void _onTabTapped(int index) {
     _fetchAnalysisData();
     setState(() {
@@ -670,10 +738,12 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
     );
   }
 
+  /// Updates the reminder setting for the goal in Firestore.
+  /// Allows the user to recieve push notifications for the goal
   void _updateReminders(bool reminders) async {
     try {
       final String userId =
-          "B7FOLVzsJ0trs9DLvYcZ"; // Replace with actual user ID
+          "B7FOLVzsJ0trs9DLvYcZ";
       await FirebaseFirestore.instance
           .collection('users')
           .doc(userId)
@@ -685,10 +755,11 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
     }
   }
 
+  /// Updates whether the goal gets updates manually or intuitively in Firestore.
   void _updateIntuitive(bool intuitiveUpdate) async {
     try {
       final String userId =
-          "B7FOLVzsJ0trs9DLvYcZ"; // Replace with actual user ID
+          "B7FOLVzsJ0trs9DLvYcZ";
       await FirebaseFirestore.instance
           .collection('users')
           .doc(userId)
@@ -700,6 +771,7 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
     }
   }
 
+  /// Fetches analysis data for the goal from Firestore.
   Future<void> _fetchAnalysisData() async {
     try {
       final String userId =
@@ -721,7 +793,10 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
     }
   }
 
+  /// Builds a bar chart displaying goal completion progress.
+  /// Groups progress by days, weeks, and months
   Widget _buildBarChart() {
+    // Determine the key for analysis data based on the selected timeframe.
     final String dbKey = _selectedTimeframe.toLowerCase() == 'daily'
         ? 'days'
         : _selectedTimeframe.toLowerCase() == 'weekly'
@@ -743,6 +818,7 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
     // Retrieve data from Firebase
     final List<dynamic> data = analysisData[dbKey] ?? [];
 
+    // Container for the bar chart
     return SizedBox(
       height: 200,
       child: BarChart(
@@ -767,6 +843,7 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
                 },
               ),
             ),
+            // x-value represents time frame
             bottomTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
@@ -832,7 +909,7 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
                 sideTitles: SideTitles(showTitles: false)), // Hide right titles
           ),
           groupsSpace: 10,
-          // Space between bars
+          // Create rods representing data and animate them
           barGroups: data
               .asMap()
               .entries
@@ -860,6 +937,7 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
     );
   }
 
+  /// Builds a card displaying various statistics such as all time completions and best streak.
   Widget _buildStatsCard(String label, String value, String? unit) {
     return Expanded(
       child: Container(
@@ -913,13 +991,16 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
     );
   }
 
+  /// Allows user to update goal progress as well as reminders and intuive updates.
   Widget _buildEditPage() {
+    // Calculate the progress percentage for the CircularPercentIndicator.
     final progressPercentage = (progress / widget.goal.target).clamp(0.0, 1.0);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 15),
       child: Column(
         children: [
+          // Progress container displaying the CircularPercentIndicator and controls.
           Container(
             padding: const EdgeInsets.all(15.0),
             decoration: BoxDecoration(
@@ -943,13 +1024,15 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
                 ),
                 SizedBox(height: 15),
                 Center(
-                  child: CircularPercentIndicator(
+                  // CircularPercentIndicator with controls for increasing/decreasing progress.
+                child: CircularPercentIndicator(
                     radius: 130.0,
                     lineWidth: 20.0,
                     percent: progressPercentage,
                     center: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
+                        // Decrement progress button.
                         IconButton(
                           icon: const Icon(Icons.remove_circle, size: 35),
                           color: CustomColors.primary,
@@ -960,6 +1043,7 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
                           },
                         ),
                         const SizedBox(width: 3),
+                        // Progress input field and target display.
                         Padding(
                           padding: const EdgeInsets.only(top: 100.0),
                           child: Column(
@@ -995,13 +1079,14 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
                                     decoration: const InputDecoration(
                                       border: InputBorder.none,
                                     ),
+                                    // Update progress only if it has changed
                                     onSubmitted: (value) async {
                                       final int? newProgress =
                                           int.tryParse(value);
                                       if (newProgress != null &&
                                           newProgress >= 0 && newProgress != progress) {
                                         _updateProgress(
-                                            newProgress); // Update progress
+                                            newProgress);
                                       } else {
                                         ScaffoldMessenger.of(context)
                                             .showSnackBar(
@@ -1030,6 +1115,7 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
                           ),
                         ),
                         const SizedBox(width: 3),
+                        // Increment progress button.
                         IconButton(
                           icon: const Icon(Icons.add_circle, size: 35),
                           color: CustomColors.primary,
@@ -1051,6 +1137,7 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
             ),
           ),
           const SizedBox(height: 15.0),
+          // Reminder slider to toggle daily notifications.
           SliderCard(
             text: 'Reminders',
             onActivate: () async {
@@ -1072,6 +1159,7 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
             isActive: widget.goal.details['reminders'],
           ),
           const SizedBox(height: 15.0),
+          // Intuitive update slider and scan meal button for nutrition goals.
           if (widget.goal.details['intuitiveUpdate'] != null)
             Column(
               children: [
@@ -1091,6 +1179,7 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
                   },
                   isActive: widget.goal.details['intuitiveUpdate'],
                 ),
+                // Allows user to take a picture of their meal and updates goals with macronutrient data
                 const SizedBox(height: 15.0),
                 if (widget.goal.category == 'nutrition' && widget.goal.details['intuitiveUpdate'])
                   CustomButton(
@@ -1139,12 +1228,14 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
     );
   }
 
+  /// Builds the Analysis Page UI for displaying goal progress trends and statistics.
   Widget _buildAnalysisPage() {
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Container displaying trends and a bar chart.
           Container(
             decoration: BoxDecoration(
               color: Colors.white,
@@ -1154,9 +1245,11 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Row for the "Trends" title and timeframe selector.
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
+                    // Title for the trends section.
                     CustomText(
                       text: "Trends",
                       fontSize: 20,
@@ -1164,26 +1257,26 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
                       color: CustomColors.darkGray,
                       squash: true,
                     ),
+                    // Timeframe selector (Daily, Weekly, Monthly).
                     Container(
                       decoration: BoxDecoration(
                         color: CustomColors.offWhite,
                         borderRadius: BorderRadius.circular(15),
                       ),
                       child: Row(
-                        children:
-                            ['Daily', 'Weekly', 'Monthly'].map((timeframe) {
+                        children: ['Daily', 'Weekly', 'Monthly'].map((timeframe) {
                           final bool isSelected =
-                              _selectedTimeframe == timeframe;
+                              _selectedTimeframe == timeframe; // Check if the timeframe is selected.
                           return GestureDetector(
                             onTap: () => setState(() {
-                              _selectedTimeframe = timeframe;
+                              _selectedTimeframe = timeframe; // Update the selected timeframe.
                             }),
                             child: Container(
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 10, vertical: 5),
                               decoration: BoxDecoration(
                                 color: isSelected
-                                    ? CustomColors.primary
+                                    ? CustomColors.primary // Highlight the selected timeframe.
                                     : CustomColors.offWhite,
                                 borderRadius: BorderRadius.circular(10),
                               ),
@@ -1192,7 +1285,7 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
                                 color: isSelected
-                                    ? Colors.white
+                                    ? Colors.white // Highlight text for selected.
                                     : CustomColors.primary,
                                 squash: true,
                               ),
@@ -1204,11 +1297,13 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
                   ],
                 ),
                 const SizedBox(height: 20),
+                // Bar chart for visualizing trends.
                 _buildBarChart(),
               ],
             ),
           ),
           const SizedBox(height: 20),
+          // Row displaying total completions and best streak.
           Row(
             children: [
               _buildStatsCard('Total Completions',
@@ -1219,6 +1314,7 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
             ],
           ),
           const SizedBox(height: 10),
+          // Row displaying daily average and all-time progress.
           Row(
             children: [
               _buildStatsCard(
@@ -1234,40 +1330,41 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
     );
   }
 
+  /// Builds the main UI structure of the Goal Detail page.
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        FocusScope.of(context).unfocus(); // Hides the keyboard
+        FocusScope.of(context).unfocus(); // Hides the keyboard when tapping outside
       },
       child: Scaffold(
-        resizeToAvoidBottomInset: false,
+        resizeToAvoidBottomInset: false, // Prevents UI resizing when the keyboard appears
         appBar: AppBar(
           backgroundColor: CustomColors.primary,
           elevation: 0,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () {
-              Navigator.pop(context); // Navigate back
+              Navigator.pop(context); // Navigates back to the previous screen
             },
           ),
           title: CustomText(
-            text: widget.goal.details['name'] ?? 'Goal Detail',
+            text: widget.goal.details['name'] ?? 'Goal Detail', // Displays the goal name
             fontSize: 25.0,
             fontWeight: FontWeight.w800,
             color: Colors.white,
             squash: true,
           ),
-          centerTitle: true,
+          centerTitle: true, // Centers the title
         ),
         body: Container(
-          color: CustomColors.offWhite,
+          color: CustomColors.offWhite, // Sets the background color
           child: Column(
             children: [
-              // Custom Tabs
+              // Custom tab selector
               Padding(
-                padding:
-                    const EdgeInsets.only(left: 70.0, right: 70.0, top: 15.0),
+                padding: const EdgeInsets.only(
+                    left: 70.0, right: 70.0, top: 15.0),
                 child: Container(
                   decoration: BoxDecoration(
                     color: Colors.white,
@@ -1276,16 +1373,16 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
                   padding: EdgeInsets.all(5.0),
                   child: Row(
                     children: [
-                      // Edit Tab
+                      // Edit tab
                       Expanded(
                         child: GestureDetector(
-                          onTap: () => _onTabTapped(0),
+                          onTap: () => _onTabTapped(0), // Switches to the Edit tab
                           child: Container(
                             alignment: Alignment.center,
                             padding: const EdgeInsets.symmetric(vertical: 5.0),
                             decoration: BoxDecoration(
                               color: _currentIndex == 0
-                                  ? CustomColors.primary
+                                  ? CustomColors.primary // Highlights selected tab
                                   : Colors.white,
                               borderRadius: BorderRadius.circular(13.0),
                             ),
@@ -1294,23 +1391,23 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
                               fontSize: 16.0,
                               fontWeight: FontWeight.w600,
                               color: _currentIndex == 0
-                                  ? Colors.white
+                                  ? Colors.white // Highlights text in selected tab
                                   : CustomColors.darkGray,
                               squash: true,
                             ),
                           ),
                         ),
                       ),
-                      // Analysis Tab
+                      // Analysis tab
                       Expanded(
                         child: GestureDetector(
-                          onTap: () => _onTabTapped(1),
+                          onTap: () => _onTabTapped(1), // Switches to the Analysis tab
                           child: Container(
                             alignment: Alignment.center,
                             padding: const EdgeInsets.symmetric(vertical: 5.0),
                             decoration: BoxDecoration(
                               color: _currentIndex == 1
-                                  ? CustomColors.primary
+                                  ? CustomColors.primary // Highlights selected tab
                                   : Colors.white,
                               borderRadius: BorderRadius.circular(13.0),
                             ),
@@ -1319,7 +1416,7 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
                               fontSize: 16.0,
                               fontWeight: FontWeight.w600,
                               color: _currentIndex == 1
-                                  ? Colors.white
+                                  ? Colors.white // Highlights text in selected tab
                                   : CustomColors.darkGray,
                               squash: true,
                             ),
@@ -1330,21 +1427,22 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
                   ),
                 ),
               ),
+              // PageView for switching between Edit and Analysis pages
               Expanded(
                 child: PageView(
                   controller: _pageController,
                   onPageChanged: (index) {
                     setState(() {
-                      _currentIndex = index;
+                      _currentIndex = index; // Updates the current tab index
                     });
                   },
                   children: [
-                    // Edit Page
+                    // Edit page
                     SingleChildScrollView(
                       child: _buildEditPage(),
                     ),
-                    // Analysis Page
-                    if (analysisData != {})
+                    // Analysis page
+                    if (analysisData != {}) // Only displays if analysisData exists
                       SingleChildScrollView(
                         child: _buildAnalysisPage(),
                       ),
@@ -1354,8 +1452,9 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
             ],
           ),
         ),
+        // Bottom Navigation Bar
         bottomNavigationBar: BottomNavigationBar(
-          currentIndex: 1,
+          currentIndex: 1, // Highlights the "Goals" tab
           selectedItemColor: CustomColors.primary,
           backgroundColor: Colors.white,
           unselectedItemColor: Colors.grey,
@@ -1363,29 +1462,34 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
           showUnselectedLabels: false,
           type: BottomNavigationBarType.fixed,
           items: const [
+            // Home tab
             BottomNavigationBarItem(
               icon: ImageIcon(AssetImage('assets/images/home.png')),
               label: '',
             ),
+            // Goals tab
             BottomNavigationBarItem(
               icon: ImageIcon(AssetImage('assets/images/goals.png')),
               label: '',
             ),
+            // Badges tab
             BottomNavigationBarItem(
               icon: ImageIcon(AssetImage('assets/images/badges.png')),
               label: '',
             ),
+            // Discover tab
             BottomNavigationBarItem(
               icon: ImageIcon(AssetImage('assets/images/discover.png')),
               label: '',
             ),
+            // Settings tab
             BottomNavigationBarItem(
               icon: ImageIcon(AssetImage('assets/images/settings.png')),
               label: '',
             ),
           ],
           onTap: (index) {
-            // Add navigation logic if needed
+            // Navigation logic can be added here
           },
         ),
       ),
@@ -1393,6 +1497,7 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
   }
 }
 
+/// Allows the user to add a new goal by selecting from predefined categories or creating a custom goal.
 class AddGoalPage extends StatefulWidget {
   const AddGoalPage({super.key});
 
@@ -1401,7 +1506,7 @@ class AddGoalPage extends StatefulWidget {
 }
 
 class _AddGoalPageState extends State<AddGoalPage> {
-  int _selectedIndex = 0;
+  int _selectedIndex = 0; // Index of the currently selected goal category
 
   // Separate lists for titles and asset paths
   final List<String> _goalTitles = [
@@ -1417,6 +1522,7 @@ class _AddGoalPageState extends State<AddGoalPage> {
     'assets/images/custom.png',
   ];
 
+  // List of goal options and corresponding icon asset paths.
   List<Widget> _buildTapCardsByCategory(String category) {
     if (category == 'Active') {
       return [
@@ -1667,6 +1773,7 @@ class _AddGoalPageState extends State<AddGoalPage> {
           category: 'nutrition',
         ),
       ];
+      /// If the category is custom, all fields including title are set by the user
     } else if (category == 'Custom') {
       return [
         Padding(
@@ -1695,6 +1802,7 @@ class _AddGoalPageState extends State<AddGoalPage> {
     return []; // Default empty list for invalid categories
   }
 
+  /// Format the goal options in a vertical column view
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -1744,7 +1852,7 @@ class _AddGoalPageState extends State<AddGoalPage> {
                     return GestureDetector(
                       onTap: () {
                         setState(() {
-                          _selectedIndex = index;
+                          _selectedIndex = index; // Change page
                         });
                       },
                       child: Container(
@@ -1782,6 +1890,7 @@ class _AddGoalPageState extends State<AddGoalPage> {
           ),
         ),
       ),
+      // Display different goals depending on what category index is selected
       body: Container(
         height: MediaQuery.of(context).size.height, // Full screen height
         color: CustomColors.offWhite,
@@ -1839,11 +1948,13 @@ class _AddGoalPageState extends State<AddGoalPage> {
   }
 }
 
+/// A page for customizing a goal, allowing the user to set specific attributes
+/// like name, target, reminders, and update preferences.
 class GoalCustomizationPage extends StatefulWidget {
-  final bool isCustom;
-  final String name;
-  final String category;
-  final String? unit;
+  final bool isCustom; // Indicates if the goal is custom or predefined
+  final String name; // Name of the goal (predefined or custom)
+  final String category; // Goal category (e.g., 'active', 'nutrition')
+  final String? unit; // Measurement unit for the goal
 
   const GoalCustomizationPage({
     super.key,
@@ -1859,14 +1970,15 @@ class GoalCustomizationPage extends StatefulWidget {
 
 class _GoalCustomizationPageState extends State<GoalCustomizationPage> {
   // Local variables
-  String type = 'reach'; // 'reach' or 'avoid'
-  bool intuitiveUpdate = false;
-  bool reminders = false;
-  String period = 'Daily';
-  int target = 0;
-  String? customName;
-  String? customUnit;
+  String type = 'reach'; // Type of goal: 'reach' or 'avoid'
+  bool intuitiveUpdate = false; // Auto-update progress based on activity
+  bool reminders = false; // Whether to enable reminders
+  String period = 'Daily'; // Frequency of the goal
+  int target = 0; // Target value for the goal
+  String? customName; // Custom name for custom goals
+  String? customUnit; // Custom unit for custom goals
 
+  // Allows user to edit the respective field attached to each controller
   final TextEditingController _targetController = TextEditingController();
   final TextEditingController _customNameController = TextEditingController();
   final TextEditingController _customUnitController = TextEditingController();
@@ -1879,14 +1991,17 @@ class _GoalCustomizationPageState extends State<GoalCustomizationPage> {
     }
   }
 
+  /// Saves the goal to Firestore and navigates back to the main goal page.
   Future<void> _saveGoal() async {
     try {
+      // Prepare the goal data to be saved
       final String userId =
-          "B7FOLVzsJ0trs9DLvYcZ"; // Replace with actual user ID
+          "B7FOLVzsJ0trs9DLvYcZ";
       final goalData = {
         'category': widget.category,
         'complete': false,
         'details': {
+          // Only active and nutrition goals can update intuitively
           if (widget.category == 'active' || widget.category == 'nutrition') 'intuitiveUpdate': intuitiveUpdate,
           'name': widget.isCustom ? customName ?? '' : widget.name,
           'period': period,
@@ -1905,13 +2020,15 @@ class _GoalCustomizationPageState extends State<GoalCustomizationPage> {
           .collection('goals')
           .add(goalData);
 
-      Navigator.pop(context); // Navigate back after saving
-      Navigator.pop(context); // Navigate back after saving
+      Navigator.pop(context); // Navigate back to add goal page
+      Navigator.pop(context); // Navigate back to main goal page
     } catch (e) {
       print('Error saving goal: $e');
     }
   }
 
+  /// Builds the main UI for customizing a goal, including form inputs,
+  /// sliders, and submission functionality.
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -1924,12 +2041,12 @@ class _GoalCustomizationPageState extends State<GoalCustomizationPage> {
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: () {
-              Navigator.pop(context);
+              Navigator.pop(context); // Navigate back to the add goal page
             },
             color: Colors.white,
           ),
           title: CustomText(
-            text: widget.isCustom ? 'Custom Goal' : widget.name,
+            text: widget.isCustom ? 'Custom Goal' : widget.name, // Set title based on goal type
             fontSize: 25.0,
             fontWeight: FontWeight.w800,
             color: Colors.white,
@@ -1947,6 +2064,7 @@ class _GoalCustomizationPageState extends State<GoalCustomizationPage> {
               children: [
                 const SizedBox(height: 15),
                 if (widget.isCustom)
+                // Custom name input for custom goals
                   Container(
                     margin: EdgeInsets.only(bottom: 15),
                     decoration: BoxDecoration(
@@ -1998,7 +2116,7 @@ class _GoalCustomizationPageState extends State<GoalCustomizationPage> {
                               contentPadding: const EdgeInsets.symmetric(vertical: 8.0), // Adjust padding for centering
                             ),
                             onChanged: (value) {
-                              customName = value;
+                              customName = value; // Update name of the goal
                             },
                             onTap: () {
                               setState(() {}); // Refresh UI to update hint text disappearance
@@ -2011,6 +2129,7 @@ class _GoalCustomizationPageState extends State<GoalCustomizationPage> {
                       ],
                     ),
                   ),
+                // Goal type selection
                 Container(
                   padding: const EdgeInsets.symmetric(
                       horizontal: 20.0, vertical: 15.0),
@@ -2036,7 +2155,7 @@ class _GoalCustomizationPageState extends State<GoalCustomizationPage> {
                         ),
                         child: Row(
                           children: [
-                            // Edit Tab
+                            // Reach option
                             Expanded(
                               child: GestureDetector(
                                 onTap: () => setState(() {
@@ -2064,7 +2183,7 @@ class _GoalCustomizationPageState extends State<GoalCustomizationPage> {
                                 ),
                               ),
                             ),
-                            // Analysis Tab
+                            // Avoid option
                             Expanded(
                               child: GestureDetector(
                                 onTap: () => setState(() {
@@ -2153,6 +2272,7 @@ class _GoalCustomizationPageState extends State<GoalCustomizationPage> {
                             ),
                           ),
                           SizedBox(width: 10),
+                          // Unit input for custom goals
                           if (widget.isCustom)
                             Expanded(
                               child: Container(
@@ -2228,8 +2348,11 @@ class _GoalCustomizationPageState extends State<GoalCustomizationPage> {
                             squash: true,
                           ),
                           SizedBox(width: 114),
+                          /* User can set a time constraint to complete a goal:
+                          daily, weekly, and monthly */
                           GestureDetector(
                             onTap: () {
+                              // Open option selector
                               showModalBottomSheet(
                                 context: context,
                                 backgroundColor: Colors.transparent,
@@ -2332,6 +2455,7 @@ class _GoalCustomizationPageState extends State<GoalCustomizationPage> {
                     ],
                   ),
                 ),
+                // Option to enable reminders
                 const SizedBox(height: 15),
                 SliderCard(
                   text: 'Reminders',
@@ -2349,6 +2473,7 @@ class _GoalCustomizationPageState extends State<GoalCustomizationPage> {
                     });
                   },
                 ),
+                // Allow intuitive update toggle only if nutrition or active goal
                 if (widget.category == 'active' || widget.category == 'nutrition')
                 Column(
                   children: [

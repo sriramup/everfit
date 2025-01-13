@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-
+/// Text formatting widget that provides a standard layout for all text displayed in the app
 class CustomText extends StatelessWidget {
   final String text; // The text to display
   final double fontSize; // Font size of the text

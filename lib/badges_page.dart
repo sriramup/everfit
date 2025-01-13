@@ -41,7 +41,7 @@ class _BadgesPageState extends State<BadgesPage> {
     try {
       final badges = await _fetchBadges();
 
-      // Compare and update state only if there's a change
+      // Compare and update state only if a badge's unlock progress has changed
       if (_isBadgeListChanged(badges['unlocked']!, unlocked) ||
           _isBadgeListChanged(badges['inProgress']!, inProgress) ||
           _isBadgeListChanged(badges['locked']!, locked)) {
@@ -56,11 +56,13 @@ class _BadgesPageState extends State<BadgesPage> {
     }
   }
 
+  /// Compares old badge data to newly fetched badge data to spot differences
   bool _isBadgeListChanged(List<BadgeItem> newList, List<BadgeItem> currentList) {
     if (newList.length != currentList.length) {
       return true;
     }
 
+    // message changes when a badge changes status (locked, in progress, unlocked)
     for (int i = 0; i < newList.length; i++) {
       if (newList[i].message != currentList[i].message ||
           newList[i].progress != currentList[i].progress) {
@@ -70,19 +72,21 @@ class _BadgesPageState extends State<BadgesPage> {
     return false;
   }
 
+  /// Separate badges by status because it influences its appearance in the UI
   Future<Map<String, List<BadgeItem>>> _fetchBadges() async {
     final unlocked = <BadgeItem>[];
     final inProgress = <BadgeItem>[];
     final locked = <BadgeItem>[];
 
     try {
-      final String userId = "B7FOLVzsJ0trs9DLvYcZ"; // Replace with the actual user ID
+      final String userId = "B7FOLVzsJ0trs9DLvYcZ";
       final snapshot = await FirebaseFirestore.instance
           .collection('users')
           .doc(userId)
           .collection('badges')
           .get();
 
+      // Loads database badge data into displayable badge widgets
       for (var doc in snapshot.docs) {
         final data = doc.data();
         final progress = data['progress'] ?? 0;
@@ -98,9 +102,10 @@ class _BadgesPageState extends State<BadgesPage> {
           isUnlocked: progress >= amount,
           progress: progress,
           amount: amount,
-          isNew: data.containsKey('recent'),
+          isNew: data.containsKey('recent'), // If the badge was recently unlocked
         );
 
+        // Sorts newly created badge into a group
         if (progress >= amount) {
           unlocked.add(badge);
         } else if (progress > 0) {
@@ -127,7 +132,7 @@ class _BadgesPageState extends State<BadgesPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Unlocked Badges
+          // Display unlocked badges
           BadgeCategoryWidget(
             icon: Icons.lock_open,
             title: "Unlocked",
@@ -145,7 +150,7 @@ class _BadgesPageState extends State<BadgesPage> {
             badges: unlocked,
           ),
           const SizedBox(height: 20.0),
-          // In Progress Badges
+          // Display in progress badges
           BadgeCategoryWidget(
             icon: Icons.timelapse,
             title: "In Progress",
@@ -163,7 +168,7 @@ class _BadgesPageState extends State<BadgesPage> {
             badges: inProgress,
           ),
           const SizedBox(height: 20.0),
-          // Locked Badges
+          // Display locked badges
           BadgeCategoryWidget(
             icon: Icons.lock,
             title: "Locked",

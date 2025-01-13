@@ -1,17 +1,42 @@
 import 'package:flutter/material.dart';
 import '../colors.dart';
 
+/// A customizable card widget with an icon, main text, optional subtext, and a tap action.
+///
+/// [TapCard] is used for navigational purposes and supports dynamic styling,
+/// optional subtext, and fallback behaviors for missing icons.
 class TapCard extends StatelessWidget {
-  final String text; // Main text for the card
-  final String imagePath; // Path for the rounded image icon
-  final String? subText; // Optional subtext
-  final VoidCallback onPressed; // Callback for card press
-  final Color backgroundColor; // Background color of the card
-  final Color textColor; // Main text color
-  final Color? subTextColor; // Subtext color
-  final Color? border; // Optional border color for the image
-  final Color? imageColor; // Optional color for the image
+  /// The main text displayed on the card.
+  final String text;
+
+  /// The path to the image or icon displayed on the card.
+  final String imagePath;
+
+  /// Optional subtext displayed below the main text.
+  final String? subText;
+
+  /// The callback function triggered when the card is tapped.
+  final VoidCallback onPressed;
+
+  /// The background color of the card.
+  final Color backgroundColor;
+
+  /// The color of the main text.
+  final Color textColor;
+
+  /// The color of the subtext (if provided).
+  final Color? subTextColor;
+
+  /// An optional border color for the image/icon.
+  final Color? border;
+
+  /// An optional color to apply to the image/icon.
+  final Color? imageColor;
+
+  /// The background color of the image container.
   final Color? containerColor;
+
+  /// An optional category to conditionally display specific icons.
   final String? category;
 
   const TapCard({
@@ -24,7 +49,7 @@ class TapCard extends StatelessWidget {
     this.textColor = CustomColors.darkGray,
     this.subTextColor = CustomColors.gray,
     this.border,
-    this.imageColor, // Initialize the optional parameter
+    this.imageColor,
     this.containerColor,
     this.category,
   });
@@ -32,78 +57,79 @@ class TapCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: backgroundColor == CustomColors.offWhite || containerColor == CustomColors.turquoise ? const EdgeInsets.symmetric(horizontal: 0.0) : const EdgeInsets.symmetric(horizontal: 20.0),
+      // Conditional padding based on background or container color
+      padding: backgroundColor == CustomColors.offWhite || containerColor == CustomColors.turquoise
+          ? const EdgeInsets.symmetric(horizontal: 0.0)
+          : const EdgeInsets.symmetric(horizontal: 20.0),
       child: GestureDetector(
-        onTap: onPressed, // Handle the tap
+        onTap: onPressed, // Trigger the callback on tap
         child: Container(
           decoration: BoxDecoration(
-            color: backgroundColor,
+            color: backgroundColor, // Card background color
             borderRadius: BorderRadius.circular(15.0),
           ),
-          padding: containerColor!= null && containerColor == CustomColors.primaryFaded ? const EdgeInsets.symmetric(vertical: 15.0, horizontal: 10.0) : const EdgeInsets.symmetric(vertical: 12.0, horizontal: 10.0),
+          padding: containerColor != null && containerColor == CustomColors.primaryFaded
+              ? const EdgeInsets.symmetric(vertical: 15.0, horizontal: 10.0)
+              : const EdgeInsets.symmetric(vertical: 12.0, horizontal: 10.0),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Rounded Image Icon with conditional border
+              // Rounded image or icon with optional border
               Padding(
                 padding: const EdgeInsets.only(right: 10.0, left: 5.0),
-                // Add padding around the image
-                child:
-                containerColor != null && containerColor == CustomColors.primaryFaded ?
-                  CircleAvatar(
-                    radius: 20.0,
-                    backgroundColor: CustomColors.primaryFaded,
-                    child: Icon(
-                      category == 'active'
-                          ? Icons.local_fire_department
-                          : category == 'nutrition' ? Icons.no_food_rounded
-                          : category == 'weight' ? Icons.monitor_weight
-                          : category == 'drink' ? Icons.local_drink
-                          : category == 'custom' ? Icons.folder_special
-                          : Icons.mode_night,
-                      color: CustomColors.primary,
-                    ),
-                  )
-                :
-                  Container(
-                    width: 50.0, // Larger image width
-                    height: 50.0, // Larger image height
-                    decoration: BoxDecoration(
-                      color: backgroundColor == CustomColors.offWhite ? CustomColors.primary : containerColor,
-                      borderRadius: BorderRadius.circular(8.0),
-                      border: border != null
-                          ? Border.all(
-                        color: border!,
-                        width: 2.0,
-                      )
-                          : null, // Add border only if provided
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(8.0),
-                      child: Container(
-                        padding: backgroundColor == CustomColors.offWhite ? EdgeInsets.all(10.0) : containerColor == CustomColors.turquoise ? EdgeInsets.all(1.0) : null,
-                        child: Image.asset(
-                          imagePath,
-                          fit: BoxFit.cover,
-                          color: imageColor, // Apply the imageColor if provided
-                          colorBlendMode: imageColor != null
-                              ? BlendMode.srcIn
-                              : BlendMode.dst, // Ensure proper blending
-                          errorBuilder: (context, error, stackTrace) => Icon(
-                            Icons.image_not_supported,
-                            color: Colors.grey,
-                            size: 24.0,
-                          ), // Fallback icon if image fails to load
+                child: containerColor != null && containerColor == CustomColors.primaryFaded
+                    ? CircleAvatar(
+                  radius: 20.0,
+                  backgroundColor: CustomColors.primaryFaded,
+                  child: Icon(
+                    _getCategoryIcon(category), // Icon based on category
+                    color: CustomColors.primary,
+                  ),
+                )
+                    : Container(
+                  width: 50.0, // Image width
+                  height: 50.0, // Image height
+                  decoration: BoxDecoration(
+                    color: backgroundColor == CustomColors.offWhite
+                        ? CustomColors.primary
+                        : containerColor,
+                    borderRadius: BorderRadius.circular(8.0),
+                    border: border != null
+                        ? Border.all(
+                      color: border!,
+                      width: 2.0,
+                    )
+                        : null,
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8.0),
+                    child: Container(
+                      padding: backgroundColor == CustomColors.offWhite
+                          ? const EdgeInsets.all(10.0)
+                          : containerColor == CustomColors.turquoise
+                          ? const EdgeInsets.all(1.0)
+                          : null,
+                      child: Image.asset(
+                        imagePath, // Path to the image
+                        fit: BoxFit.cover,
+                        color: imageColor,
+                        colorBlendMode: imageColor != null
+                            ? BlendMode.srcIn
+                            : BlendMode.dst,
+                        errorBuilder: (context, error, stackTrace) => Icon(
+                          Icons.image_not_supported,
+                          color: Colors.grey,
+                          size: 24.0,
                         ),
                       ),
                     ),
                   ),
                 ),
-              // Text Column
+              ),
+              // Text column with main and subtext
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.only(left: 5.0),
-                  // Add padding for the text
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -121,7 +147,6 @@ class TapCard extends StatelessWidget {
                         ),
                       ),
                       if (subText != null)
-                      // Add space between text and subtext
                         Transform(
                           transform: Matrix4.diagonal3Values(1.0, 0.95, 1.0),
                           child: Text(
@@ -139,16 +164,14 @@ class TapCard extends StatelessWidget {
                   ),
                 ),
               ),
-              // Custom Arrow Icon
+              // Optional arrow icon for navigation
               Padding(
                 padding: const EdgeInsets.only(left: 10.0),
-                // Add spacing before the arrow
                 child: Image.asset(
-                  'assets/images/arrow.png',
-                  // Replace with your actual arrow image path
+                  'assets/images/arrow.png', // Path to arrow image
                   width: 16.0,
                   height: 16.0,
-                  color: CustomColors.gray, // Gray color for the arrow
+                  color: CustomColors.gray,
                 ),
               ),
             ],
@@ -157,4 +180,23 @@ class TapCard extends StatelessWidget {
       ),
     );
   }
+
+  /// Returns an icon based on the provided [category].
+  IconData _getCategoryIcon(String? category) {
+    switch (category) {
+      case 'active':
+        return Icons.local_fire_department;
+      case 'nutrition':
+        return Icons.no_food_rounded;
+      case 'weight':
+        return Icons.monitor_weight;
+      case 'drink':
+        return Icons.local_drink;
+      case 'custom':
+        return Icons.folder_special;
+      default:
+        return Icons.mode_night;
+    }
+  }
 }
+

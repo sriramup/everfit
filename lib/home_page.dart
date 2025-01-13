@@ -7,13 +7,14 @@ import 'package:everfit/widgets/text.dart';
 import 'package:everfit/widgets/weather_card.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'colors.dart'; // Your custom colors
+import 'colors.dart';
 import 'journal.dart';
-import 'widgets/tap_card.dart'; // Import your TapCard widget
-import 'widgets/calorie_summary.dart'; // Import your CalorieSummaryCard widget
-import 'health_data.dart'; // Import your HealthService class
+import 'widgets/tap_card.dart';
+import 'widgets/calorie_summary.dart';
+import 'health_data.dart';
 import 'dart:async';
 
+/// Displays the most vital information pertaining to other pages as well as motivational resources
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -21,58 +22,55 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage>
-    with AutomaticKeepAliveClientMixin {
-  final HealthService _healthService =
-      HealthService(); // Initialize HealthService
-  bool? isHealthAuthorized; // Flag to check health authorization
-  int? totalSteps;
-  int? activeCalories; // Active calories burned
-  double? distanceWalked; // Distance walked or run
-  bool? incOrDecStep; // For the arrow in the summary
-  int? differenceStep; // Difference in steps for the arrow
-  bool? incOrDecCal; // For the arrow in the summary
-  int? differenceCal; // Difference in calories for the arrow
-  bool? incOrDecDist; // For the arrow in the summary
-  double? differenceDist; // Difference in distance for the arrow
-  Timer? _timer;
-  List<BadgeItem> recentBadges = [];
+class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin {
+  final HealthService _healthService = HealthService(); // To fetch health data
+  bool? isHealthAuthorized; // Indicates if the app has access to health data
+  int? totalSteps; // The total number of steps taken today
+  int? activeCalories; // The calories burned today
+  double? distanceWalked; // The distance walked or run today
+  bool? incOrDecStep; // Tracks if today's steps increased compared to yesterday
+  int? differenceStep; // Difference in steps between today and yesterday
+  bool? incOrDecCal; // Tracks if today's calories burned increased or decreased
+  int? differenceCal; // Difference in calories burned between today and yesterday
+  bool? incOrDecDist; // Tracks if today's distance walked increased or decreased
+  double? differenceDist; // Difference in distance walked between today and yesterday
+  Timer? _timer; // A timer to periodically update data
+  List<BadgeItem> recentBadges = []; // Badges the user recently earned
 
   @override
   void initState() {
     super.initState();
-    _startTimer();
-    _initializeData();
-    _fetchRecentBadges(); // Fetch recent badges
+    _startTimer(); // Start checking for updates periodically
+    _initializeData(); // Load health data
+    _fetchRecentBadges(); // Load recently earned badges
   }
 
   @override
   void dispose() {
-    _timer?.cancel(); // Cancel the timer to prevent memory leaks
+    _timer?.cancel(); // Stop the timer when leaving the page
     super.dispose();
   }
 
+  /// Starts a timer that updates health data and badges every 5 seconds
   void _startTimer() {
     _timer = Timer.periodic(const Duration(seconds: 5), (timer) async {
-      // Check for updated health data every 5 seconds
-      _initializeData();
-      _fetchRecentBadges();
+      _initializeData(); // Refresh health data
+      _fetchRecentBadges(); // Refresh badges
     });
   }
 
+  /// Loads recent badges the user has earned
   Future<void> _fetchRecentBadges() async {
     try {
-      final String userId = "B7FOLVzsJ0trs9DLvYcZ";
+      final String userId = "B7FOLVzsJ0trs9DLvYcZ"; // User ID for the database
       final snapshot = await FirebaseFirestore.instance
           .collection('users')
           .doc(userId)
           .collection('badges')
           .get();
 
-      // Separately save
       List<BadgeItem> completed = [];
 
-      // Check database for all badge details
       for (var doc in snapshot.docs) {
         final data = doc.data();
         final progress = data['progress'] ?? 0;
@@ -81,7 +79,6 @@ class _HomePageState extends State<HomePage>
         final name = data['name'] ?? 'Unnamed Badge';
         final message = data['message'] ?? '';
 
-        // Turn data into a interactable widget
         final badge = BadgeItem(
           imagePath: 'assets/images/$image',
           name: name,
@@ -92,15 +89,14 @@ class _HomePageState extends State<HomePage>
           isNew: data.containsKey('recent'),
         );
 
-        // Check if badge unlock criteria has been met
         if (progress >= amount) {
-          completed.add(badge);
+          completed.add(badge); // Add badge to the completed list if earned
         }
       }
-      // Check if new badge has been unlocked since last page's refresh
+
       if (completed.length != recentBadges.length) {
         setState(() {
-          recentBadges = completed;
+          recentBadges = completed; // Update the displayed badges
         });
       }
     } catch (e) {
@@ -108,23 +104,19 @@ class _HomePageState extends State<HomePage>
     }
   }
 
-  // Returns previous day's calories to compare with today's
+  /// Fetches the user's calorie data from yesterday for comparison
   Future<int> fetchPreviousCalories() async {
     final userId = "B7FOLVzsJ0trs9DLvYcZ";
     final firestore = FirebaseFirestore.instance;
 
     try {
-      // Fetch the document for the specific user
       final DocumentSnapshot userDoc =
-          await firestore.collection('users').doc(userId).get();
+      await firestore.collection('users').doc(userId).get();
 
       if (userDoc.exists) {
-        // Access calories burned yesterday
         final data = userDoc.data() as Map<String, dynamic>;
         final prevSummary = data['prevSummary'] as Map<String, dynamic>;
-        final previousCalories = prevSummary['calories'];
-
-        return previousCalories;
+        return prevSummary['calories'];
       } else {
         print("User document does not exist.");
       }
@@ -134,23 +126,19 @@ class _HomePageState extends State<HomePage>
     return 0;
   }
 
+  /// Fetches the user's step count data from yesterday
   Future<int> fetchPreviousSteps() async {
-    final userId = "B7FOLVzsJ0trs9DLvYcZ"; // Replace with the actual user ID
+    final userId = "B7FOLVzsJ0trs9DLvYcZ";
     final firestore = FirebaseFirestore.instance;
 
     try {
-      // Fetch the document for the specific user
       final DocumentSnapshot userDoc =
-          await firestore.collection('users').doc(userId).get();
+      await firestore.collection('users').doc(userId).get();
 
       if (userDoc.exists) {
-        // Access prevSummary -> calories
         final data = userDoc.data() as Map<String, dynamic>;
         final prevSummary = data['prevSummary'] as Map<String, dynamic>;
-        final previousSteps = prevSummary['steps'];
-
-        return previousSteps;
-        // Use the `previousCalories` variable as needed
+        return prevSummary['steps'];
       } else {
         print("User document does not exist.");
       }
@@ -160,23 +148,19 @@ class _HomePageState extends State<HomePage>
     return 0;
   }
 
+  /// Fetches the user's distance data from yesterday
   Future<double> fetchPreviousDistance() async {
-    final userId = "B7FOLVzsJ0trs9DLvYcZ"; // Replace with the actual user ID
+    final userId = "B7FOLVzsJ0trs9DLvYcZ";
     final firestore = FirebaseFirestore.instance;
 
     try {
-      // Fetch the document for the specific user
       final DocumentSnapshot userDoc =
-          await firestore.collection('users').doc(userId).get();
+      await firestore.collection('users').doc(userId).get();
 
       if (userDoc.exists) {
-        // Access prevSummary -> calories
         final data = userDoc.data() as Map<String, dynamic>;
         final prevSummary = data['prevSummary'] as Map<String, dynamic>;
-        final previousDistance = prevSummary['distance'];
-
-        return previousDistance;
-        // Use the `previousCalories` variable as needed
+        return prevSummary['distance'];
       } else {
         print("User document does not exist.");
       }
@@ -186,21 +170,22 @@ class _HomePageState extends State<HomePage>
     return 0;
   }
 
+  /// Loads the user's health data and calculates differences from yesterday
   Future<void> _initializeData() async {
     final prefs = await SharedPreferences.getInstance();
     final isAuthorized = prefs.getBool('is_health_authorized') ?? false;
 
+    // Stores live movement-related data from Apple Health
     if (isAuthorized) {
-      // Fetch active calories and distance
       final calories = await _healthService.fetchActiveCaloriesToday();
       final distance =
           (await _healthService.fetchDistanceToday())! * 0.000621371;
       final steps = await _healthService.fetchTotalStepsToday();
 
+      // Compares Apple Health Data with yesterday's data stored in the database
       if (calories != activeCalories ||
           distance != distanceWalked ||
           steps != totalSteps) {
-        // Simulate a difference for the arrow (for demo purposes)
         final previousCalories = await fetchPreviousCalories();
         final calorieDifference = (calories ?? 0) - previousCalories;
 
@@ -210,31 +195,22 @@ class _HomePageState extends State<HomePage>
         final previousDistance = await fetchPreviousDistance();
         final distanceDifference = (distance) - previousDistance;
 
+        // Updates the UI display to show the most recent data
         setState(() {
           isHealthAuthorized = true;
           activeCalories = calories;
           distanceWalked = distance;
           totalSteps = steps;
-          if (calorieDifference > 0) {
-            incOrDecCal = true;
-          }
-          if (calorieDifference < 0) {
-            incOrDecCal = false;
-          }
+
+          /* Stores the difference between today and yesterday summary which is represented
+          with an up or down arrow depending on which day saw more progress in a category */
+          incOrDecCal = calorieDifference > 0;
           differenceCal = calorieDifference.abs();
-          if (stepDifference > 0) {
-            incOrDecStep = true;
-          }
-          if (stepDifference < 0) {
-            incOrDecStep = false;
-          }
+
+          incOrDecStep = stepDifference > 0;
           differenceStep = stepDifference.abs();
-          if (distanceDifference > 0) {
-            incOrDecDist = true;
-          }
-          if (distanceDifference < 0) {
-            incOrDecDist = false;
-          }
+
+          incOrDecDist = distanceDifference > 0;
           differenceDist = distanceDifference.abs();
         });
       }
@@ -245,18 +221,18 @@ class _HomePageState extends State<HomePage>
     }
   }
 
+  /// Requests access to Apple Health data
   Future<void> _requestHealthAuthorization() async {
     bool authorized = await _healthService.requestAuthorization();
     if (authorized) {
+      // Links Apple Health across the entire app
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('is_health_authorized', true);
 
       setState(() {
-        isHealthAuthorized =
-            true; // Update the UI to reflect the authorization status
+        isHealthAuthorized = true;
       });
 
-      // Fetch initial health data
       await _initializeData();
     } else {
       print('Authorization denied.');
@@ -267,14 +243,13 @@ class _HomePageState extends State<HomePage>
   Widget build(BuildContext context) {
     return FutureBuilder<bool?>(
       future: _checkHealthAuthorization(),
-      // Check health authorization before building
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(
             child: CircularProgressIndicator(
               color: CustomColors.offWhite,
             ),
-          ); // Show loading spinner
+          );
         }
 
         final isHealthAuthorized = snapshot.data ?? false;
@@ -287,6 +262,7 @@ class _HomePageState extends State<HomePage>
                 Column(
                   children: [
                     const SizedBox(height: 15),
+                    /// Prompts the user to enable data sync
                     TapCard(
                       imagePath: 'assets/images/health.png',
                       text: 'Apple Health',
@@ -298,9 +274,11 @@ class _HomePageState extends State<HomePage>
                   ],
                 ),
               const SizedBox(height: 5),
+              /// Display Summary Data
               if (isHealthAuthorized)
                 Column(
                   children: [
+                    // These fields are nullable, so default values given for safety
                     CalorieSummaryCard(
                       caloriesBurned: activeCalories ?? 0,
                       difference: differenceCal?.abs() ?? 0,
@@ -324,6 +302,7 @@ class _HomePageState extends State<HomePage>
               const SizedBox(height: 5),
               DailySuggestions(),
               const SizedBox(height: 5),
+              // Reroutes user to Journal page separate from home
               TapCard(
                 imagePath: 'assets/images/journal.png',
                 imageColor: CustomColors.primary,
@@ -336,7 +315,8 @@ class _HomePageState extends State<HomePage>
                       builder: (context) => JournalPage(),
                     ),
                   );
-                }, backgroundColor: Colors.white,
+                },
+                backgroundColor: Colors.white,
               ),
               const SizedBox(height: 15),
               Padding(
@@ -351,6 +331,7 @@ class _HomePageState extends State<HomePage>
     );
   }
 
+  /// Safety check before reading Apple Health data
   Future<bool?> _checkHealthAuthorization() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool('is_health_authorized') ?? false;
@@ -360,6 +341,7 @@ class _HomePageState extends State<HomePage>
   bool get wantKeepAlive => true;
 }
 
+/// Creates a more simplified version of badges_page for quick view
 class RecentBadgesWidget extends StatelessWidget {
   final List<BadgeItem> badges;
 
@@ -381,7 +363,6 @@ class RecentBadgesWidget extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header Row with icon and title
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -404,8 +385,9 @@ class RecentBadgesWidget extends StatelessWidget {
               color: CustomColors.lightGray,
             ),
             const SizedBox(height: 10.0),
+            /// Displays the 3 most recent badges
             Row(
-              children: badges.take(3).toList(), // Show a maximum of 4 badges
+              children: badges.take(3).toList(),
             ),
           ],
         ),

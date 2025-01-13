@@ -8,7 +8,7 @@ import 'home_page.dart';
 import 'settings_page.dart';
 
 
-// Uniform layout of the app that maps each page to navigation bar icons
+/// Uniform layout of the app that maps each page to navigation bar icons
 class MainPage extends StatefulWidget {
   const MainPage({super.key});
 
@@ -19,13 +19,13 @@ class MainPage extends StatefulWidget {
 class _MainPageState extends State<MainPage> {
   int _currentIndex = 0;
 
-  // Define the pages with their respective titles and subtitle statuses
+  /// Define the pages with their respective titles and subtitle statuses
   List<Map<String, dynamic>> _pages = [];
 
   @override
   void initState() {
     super.initState();
-    // Assign a page to an index
+    /// Assign a page to an index
     _pages = [
       {
         'title': 'Home',
@@ -61,7 +61,7 @@ class _MainPageState extends State<MainPage> {
     ];
   }
 
-  // Change what page is being viewed without sliding
+  /// Change what page is being viewed without sliding
   void _onTabTapped(int index) {
     setState(() {
       _currentIndex = index;
@@ -75,7 +75,7 @@ class _MainPageState extends State<MainPage> {
         title: _pages[_currentIndex]['title'],
         subtitle: _pages[_currentIndex]['subtitle'],
         add: _pages[_currentIndex]['add'],
-        body: IndexedStack( // Allows the state of each page to be preserved
+        body: IndexedStack( /// Allows the state of each page to be preserved
           index: _currentIndex,
           children: <Widget>[
             HomePage(),
@@ -88,7 +88,7 @@ class _MainPageState extends State<MainPage> {
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
-        onTap: _onTabTapped,
+        onTap: _onTabTapped, /// Updates index
         selectedItemColor: CustomColors.primary,
         backgroundColor: Colors.white,
         unselectedItemColor: Colors.grey,
