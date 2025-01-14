@@ -52,7 +52,7 @@ class _SagePageState extends State<SagePage> {
       final response = await http.post(
         Uri.parse('https://api.openai.com/v1/chat/completions'),
         headers: {
-          'Authorization': 'Bearer <your-api-key>', // Replace with your OpenAI API key
+          'Authorization': 'Bearer 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', // Replace with your OpenAI API key
           'Content-Type': 'application/json',
         },
         body: json.encode({
