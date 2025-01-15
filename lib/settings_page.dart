@@ -310,7 +310,7 @@ class AboutAppPage extends StatelessWidget {
       ),
       body: Container(
         width: MediaQuery.of(context).size.width,
-        height: MediaQuery.of(context).size.height,
+        height: MediaQuery.of(context).size.height - 550,
         color: CustomColors.offWhite,
         child: Container(
           margin: EdgeInsets.symmetric(horizontal: 20.0, vertical: 15.0),
@@ -320,7 +320,13 @@ class AboutAppPage extends StatelessWidget {
             borderRadius: BorderRadius.circular(15.0),
           ),
           // Description
-          child: Text('data'),
+          child: CustomText(
+              text: 'EverFit is a healthy habit tracker app that makes maintaining a healthy lifestyle simple and engaging through the integration of immersive features with a user-friendly experience.',
+              fontSize: 22,
+              fontWeight: FontWeight.w500,
+              color: CustomColors.darkGray,
+              squash: true,
+          ),
         ),
       ),
       bottomNavigationBar: BottomNavigationBar(
