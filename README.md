@@ -50,9 +50,9 @@ Once the initial app processes are finished and account credentials are confirme
 - The second object displays an image of a motivational quote from BrainyQuote, ensuring users start their day with a positive mindset. This object relies on the newDay boolean 
 - The third object displays a list of daily suggestions that utilize a goal progress valuation algorithm to determine which goal objects have experienced underperforming progress from the user using a read to the analytical data tied to the goal’s document in Firebase
 Suggestions are then added to the list according to which goals experienced a decline of minimum 30% from the previous day.
-The fourth object displays a button that opens the journal page, which features and functions are described in Additional Features.
-The fifth object utilizes weather integration which is also described in additional features to display a visual of the temperature, an image mapped to each combination of temperature and sky reading, the sky reading, and the user’s location which is all fetched using OpenWeatherMap API.
-The final object reads the three most recent badges the user has earned from the badge collection found in the Firestore’s badges collection associated with each user and displays them as a horizontal list. 
+- The fourth object displays a button that opens the journal page, which features and functions are described in Additional Features.
+- The fifth object utilizes weather integration which is also described in additional features to display a visual of the temperature, an image mapped to each combination of temperature and sky reading, the sky reading, and the user’s location which is all fetched using OpenWeatherMap API.
+- The final object reads the three most recent badges the user has earned from the badge collection found in the Firestore’s badges collection associated with each user and displays them as a horizontal list. 
 
 ## Goals Screen
 When the goal icon is tapped on in the bottom navigation bar, the app switches the index to match the icon’s given index which also changes what scaffold is being displayed. This page displays the user’s active goals in a scaffold while also displaying the “add” button that allows users to navigate to the add goal page in its app bar.
