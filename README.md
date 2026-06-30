@@ -1,16 +1,100 @@
-# everfit
+# Description
+EverFit is a healthy habit tracker app that makes maintaining a healthy lifestyle simple and engaging by integrating immersive features with a user-friendly experience. Each user possesses a unique account that houses their data, from goal progress and collectible badges to daily journal entries. This personal information is securely stored and synchronized in real-time using Cloud Firestore by Google’s Firebase database platform, granting users cross-device data transfer and the ability to save changes across multiple sessions. To help users stay consistent with their routines and lift the burden of monitoring their every action, EverFit is integrated with Apple Health, which automates the tracking of physical activity such as burning calories, steps, and distance traveled which EverFit documents. Additionally, the app simplifies the often tedious process of dieting and its associated weight loss/gain by allowing users to scan their meals. The meal is then identified in an extensive library of food items from various cuisines and given a label using LogMeal’s AI image recognition technology. Lastly, it is translated into macronutrient data such as calories and carbohydrates mapped to its label, and are logged for the user, seamlessly automating the entire process from start to end.
+Although physical health is vital to maintaining healthy habits, mental health is equally important, which is why EverFit includes a daily journal for documenting the user’s morale for that day, serving as a medium to document their emotions, both positive and negative. Additionally, EverFit features a Discover page with “activities of the day” to motivate users by keeping them on track with their journey towards a healthier life as well as exposing them to new practices. Every day a different science-backed activity is shown to the user alongside an associated YouTube demonstration and health benefit article from a credible source, ranging from spiritually-enhancing yoga to muscle-building weight training routines. And if the user has any miscellaneous questions or feels stuck in their healthy lifestyle journey, the OpenAI-powered chatbot Sage is available to provide answers, guidance, and support to keep them moving forward, right at their fingertips. 
+Oftentimes, the path towards achieving a healthy lifestyle can seem overwhelming, which is why EverFit offers a diverse range of preset and custom goals across key categories such as activity, wellness, and nutrition, reducing the stress of adopting new habits one goal at a time. Users can choose specific objectives, such as improving sleep duration or drinking more water, or, for users who have more specific habits in mind, create their own objectives. The goal creation process is made simple through the customization of five options standard to all goal categories, giving users a sense of freedom while retaining a consistent goal schema within the backend database. After choosing a custom goal or preset goal, such as burning calories, the user is given the option to set the goal as reach, which is where the user’s objective is to match their progress with the target they set for themselves, such as reading 4 books a day, or to set the goal as avoid, which changes the user’s objective to avoid exceeding the limit they set for themselves, such as playing video games for 7 hours or less each week. The next option allows the user to set a target and a unit of measurement associated with it, such as 400 calories assuming the user selected the burn calories goal. The next option allows users to set a goal period–daily, weekly, or monthly–in which they must complete their goal in the chosen time frame. Lastly, the user has the option to enable reminders, which will send a notification to the user’s phone updating them about their goal completion progress once a day, and the option to enable intuitive update, which automates the goal updating process through the methods outlined in the first paragraph. Not only are users given an extensive catalog of goals to streamline their lifestyle transformation, but they are also given analytical data such as progress comparison over days, weeks, and months as well as total completions, best streak, daily average, and all-time progress. These metrics help users stay disciplined by tracking their performance, making it easier for them to overcome any obstacles they encounter as their habits develop to become more second nature.
+To gamify the user experience and make achieving a healthier lifestyle more engaging, EverFit includes a badge system that rewards users for hitting milestones and maintaining completion streaks for their goals. From earning a badge for walking 100,000 steps to completing a goal before 7 AM, these rewards provide tangible markers of progress and incentivize users to make healthier choices. Users can also share their badges on social media platforms such as iMessage and Instagram, allowing users to showcase their hard work to friends and family, further motivating users. 
 
-A new Flutter project.
+# Additional Features
 
-## Getting Started
+## User data storage 
+Rather than refreshing the user’s data every time the app is opened, EverFit saves a user’s goals, goal progress, badges, and journal entries every time a value is detected to have changed. This way, the user can experience a sense of fulfillment and can use the app flexibly.
 
-This project is a starting point for a Flutter application.
+## Apple Health Sync
+By integrating with Apple Health using Flutter’s health plugin, EverFit allows the user to view their real time steps, distance, and calories burned without manual entry by pulling the corresponding data produced by Apple Health’s movement prediction technology embedded in modern iPhones.
 
-A few resources to get you started if this is your first Flutter project:
+## Today’s Move Summary 
+Provides an intuitive visual overview of the user’s daily physical activity, including calories burned, steps taken, and distance traveled and fetches these values from Apple Health at a frequent interval to ensure accuracy. The summary compares the current day’s progress with the previous day’s performance using arrows and differences to indicate areas of improvement or decline, pushing users to surpass their past performance and adopt a mindset of daily growth.
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## Journal 
+Upon opening the journal, the user interacts with a calendar that maps a unique journal entry stored in Firestore to a clickable date. Each entry has a field for the user to type their mood for that day and any other notes they wish to add. After the user is done editing the field, EverFit overwrites the old entry in the database with its edited version, allowing the entry to be loaded in a new session even after the app is closed.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Weather integration
+Using OpenWeatherMap’s real time weather API, EverFit keeps the user updated on the current weather in their area, offering them precautions to stay healthy depending on the temperature and skies. For example, if it is below 50 degrees and it is cloudy, EverFit will urge the user to layer up and keep active indoors and actively update the activity of the day to accommodate for an indoor activity and vice versa when it is sunny and warm.
+
+## Goal updates
+EverFit offers a flexible goal-tracking experience by allowing users to update them manually or intuitively through automated tracking, such as syncing with Apple Health. Each goal update is instantly synced with EverFit’s Firestore database, as well as on the user’s device. This synchronization enables real-time parsing of progress for reminders, which uses goal progress to urge the user to complete what is left of the goal to stay on track. This also ensures continuity between sessions, as goals that are set to update intuitively update the database even when the app is closed, while all updated goals refresh the user interface to reflect the most recent changes.
+
+## Badge statuses
+EverFit’s badge interface is intuitively organized into three statuses: locked, in-progress, and unlocked badges. By dynamically updating individual badge progress in Firestore according to the specific category of an updated goal, badge progress syncs with the current app session while also updating the status of the goal for future sessions. This structure also serves to show users what they can achieve, what they are actively working on, and what milestones they’ve already reached. EverFit also highlights new badges unlocked within the same session, giving users an immediate sense of gratification.
+
+# Design Concept: 
+
+## Initial Launch
+After the user opens the app, a full-screen loading page is shown while the app creates the singleton instance that manages all of the services and utilities required to run the app. Afterwards, the user is directed to a welcome page.
+- The app’s current date and newDay status are updated within the app’s cache (which is used to refresh all daily features).
+  - newDay is set to true if the last session of the app had a current date different from this session’s.
+- The user is then given the option to go to a log in or sign up page, which both have user input fields for entering in an email address and a password
+  - Log in is for users who have a document already ID’d in the database with data tied to it.
+  - Sign up is for users who are new to the app and need to create a document to store data.
+- iPhone health data, and user settings preferences are initialized and set up for use in the app. 
+- An endpoint to a back-end database on Cloud Firestore is initialized for read/write access
+- Initial user data is created as a collection for goals, badges, and journal entries are created and converted into their respective objects.
+
+## Layout of the User Interface
+EverFit utilizes an innovative UI design to display the home, goals, badges, discover, and settings page all at the same time and on the same screen. API content such as Apple Health, OpenWeatherMap, OpenAPI GPT 3.5-turbo, and LogMeal v2 are loaded as instance methods tied to each page’s scaffolding class structure. In order to preserve the state of each object, or what is currently being displayed in the user interface, an indexed scaffold layout is used which assigns each page to a 0-based index, and that same index is mapped to an icon on a navigation bar located at the bottom of the screen. When a new navigation icon is tapped, rather than reinitializing that page’s class by pushing a new screen, the current screen updates to display the  scaffold of the page mapped to the selected index, hiding the others. This allows the app to run more smoothly, as this eliminates background processes from refreshing unnecessarily, instead prompting them to refresh only when data points dependent on user input or external API calls are created or updated. By using a scaffolding layout, multiple objects can be displayed together at the same time in a column fashion while still retaining their individual properties. Thus, the page essentially serves as a wrapper for a list of objects, with each page class having its own unique scaffold. Each scaffold also consists of its own unique app bar which displays the name of the page, and resizes when scrolling downward to allow more interactable objects to be visible. All subpages will have a back button that eventually leads back to the main page.
+
+## Home Screen
+Once the initial app processes are finished and account credentials are confirmed in the database, the app displays the home panel. The home panel has 6-7 objects in its scaffold list:
+- The conditional object is a button that when tapped prompts the user to enable data sync with Apple Health. However, if Apple Health is already enabled the popup will not show, and this parameter is stored the the app’s settings on the user’s iPhone which is accessible through Flutter’s shared_preferences plugin
+- The first object is today's move summary, which will have a dynamic percent chart that displays calories burned as well as the comparison visuals outlined in Additional Features.
+- The second object displays an image of a motivational quote from BrainyQuote, ensuring users start their day with a positive mindset. This object relies on the newDay boolean 
+- The third object displays a list of daily suggestions that utilize a goal progress valuation algorithm to determine which goal objects have experienced underperforming progress from the user using a read to the analytical data tied to the goal’s document in Firebase
+Suggestions are then added to the list according to which goals experienced a decline of minimum 30% from the previous day.
+The fourth object displays a button that opens the journal page, which features and functions are described in Additional Features.
+The fifth object utilizes weather integration which is also described in additional features to display a visual of the temperature, an image mapped to each combination of temperature and sky reading, the sky reading, and the user’s location which is all fetched using OpenWeatherMap API.
+The final object reads the three most recent badges the user has earned from the badge collection found in the Firestore’s badges collection associated with each user and displays them as a horizontal list. 
+
+## Goals Screen
+When the goal icon is tapped on in the bottom navigation bar, the app switches the index to match the icon’s given index which also changes what scaffold is being displayed. This page displays the user’s active goals in a scaffold while also displaying the “add” button that allows users to navigate to the add goal page in its app bar.
+- Each goal object is a horizontal list of an icon associated with the goal’s name, the name of the goal, the user’s current streak, the progress out of the target represented numerically, and a progress bar representing the same proportion in a visual, all of which is read from the goals collection of the Firestore tied to the user’s document.
+  - When tapped on, these goals reveal two indexed scaffolding tabs similar to that of the main layout: one index is for updating editing the goal, which comprises of a scaffold containing the progress of the goal, which is updated manually using a plus and minus icon as well as a user input text box to update the number. With a circle percent chart displaying the progress out of the target. Every time progress is updated, the state of the goal object is refreshed, meaning any methods within it will update to display the most recent parameters passed into it, which in this case is the new goal. It also contains two sliders to enable reminders and intuitive update if the goal’s category supports it (active or nutrition).
+    - If a goal’s category is nutrition, when the intuitive update option is enabled, the page’s state refreshes to show a “scan meal” button, which when pressed will prompt the user to allow EverFit to use the camera if the permission is not already granted, and then prompt the phone’s camera to open. Once the user is satisfied with the image,  a done button will be displayed on the screen, and when pressed will create a call to LogMeal API performing the actions outlined in Description & Design.
+    - Afterward, a page will open that will display the loaded macronutrient data with the option to update all nutrition goals with their respective nutrient amount from the meal. Once the finish button is pressed, the goals page will update its state to reflect the new progress of the goals, which will update in the database, ultimately updating any badge’s progress as well.
+  - The other tab shows analytical data for the goal, all of which is fetched and updated in the Firebase, which displays a scaffold which contains the objects mentioned in the initial Description & Design. 
+- When a goal is pressed on for a certain duration, a popup is shown to the user that allows them to delete the goal from the scaffold as well as its document in the Firestore.
+- When the “add” button is pressed, a new page is pushed from the goals page, refreshing its state. This new page also follows an index scaffold layout but with each index being mapped to a goal category, namely active, wellness, nutrition, and custom.
+  - Each scaffold contains different goal presets belonging to each category displayed as a vertical list, and when tapped on opens the customization options page, which contains a vertical list displaying an interface for the user to input the options mentioned in Description & Design. 
+  - Once the done button is pressed, the Firestore adds a new goal document to the collection with the fields, updating the goal list on the app as well, which loads the new object onto the page by adding it to the scaffold.
+
+## Badges Screen
+When the badge icon is tapped on in the bottom navigation bar, the app switches the index to match the icon’s given index which also changes what scaffold is being displayed. This page displays the three status categories of the badges: unlocked, in progress, and locked, in a horizontal list similar to recent badges.
+- When the category container list is clicked on, it pushes a new page which displays all badges under that category’s status in a table with 4 columns maximum.
+- Each badge object is represented by an image that when clicked on opens another page which displays the badges unlock conditions, and if the badge is unlocked, there is an option to click the share button, which will allow the user to share an image of the badge alongside its unlock condition to various social media applications as described in Description & Design.
+- Each badge’s progress gets updated in the Firestore when a user or an API updates a goal object’s progress variable, which may update the badge’s status.
+  - A badge is locked if its own progress is 0.
+  - A badge is in progress if its own progress is less than target but greater than 0
+  - A badge is unlocked if its own progress is greater than or equal to its target. 
+- A badge’s image is grayed out unless it is unlocked.
+
+## Discover Screen
+When the discover icon is tapped on in the bottom navigation bar, the app switches the index to match the icon’s given index which also changes what scaffold is being displayed. This page displays another weather object similar to the home page’s as well as an activity of the day object which relies on the app’s newDay boolean which is stored in its local cache to update what activity is shown and its associated video and article link as described in Description & Design.
+- The next object is a button similar to journal that when pressed will push a new page that mimics a messenger user interface where the user can text sage, the GPT-3.5-turbo powered health and wellness assistant that will respond to the user’s questions.
+  - All chat history is saved for that session, but once the page is closed the history will reset. 
+
+## Settings Screen
+When the settings icon is tapped on in the bottom navigation bar, the app switches the index to match the icon’s given index which also changes what scaffold is being displayed. This page displays the user’s name which is fetched from Firebase in accordance to the user document as well as options to enable or disable apple health sync as well as keep the user signed in, which will autofill the user’s credentials in the database and open the app’s open take the user straight to the home page.
+- The next object is a button that when pressed will push a new page that reads the user’s biometric data which they can modify at any point in time. These data points (height, weight, age, and gender) are stored in Firebase’s user document that corresponds with the user, and the weight field is dynamically updated by weight related goals.
+  - Each field is given its own user input box in a vertical scaffold
+- The next object is another button that when pressed will push a static page that displays a short snippet about the app and its purpose
+- The final object is a logout button that will force the app to go back to the login page when pressed, and will also set the keep me signed in field to false in the app’s cache.
+
+# Design Plan
+EverFit will be coded on a home Mac computer so that it can be tested on iOS devices.
+The IntelliJ IDE will be used to develop this application. The chosen software to create this
+mobile application with is Flutter, Google’s cutting edge mobile development framework
+written in Dart. The Google Firebase Cloud Firestore platform will be used to host the
+back-end database to store information. A local Git repository will be created to manage
+version control and ensure efficiency in adding new features to an expanding code base. All
+development will be done using an iOS physical device to run the app on while testing. While
+the app can be deployed on either Android or iOS, the chosen platform for EverFit is iOS so
+its user interface has been designed specifically for this platform.
